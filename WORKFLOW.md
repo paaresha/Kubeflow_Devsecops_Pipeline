@@ -170,12 +170,12 @@ curl http://localhost:8001/healthz
 
 ```yaml
 services:
-  order-service:       # your built image
-  user-service:        # your built image
+  order-service:        # your built image
+  user-service:         # your built image
   notification-service: # your built image
-  postgres:            # official image
-  redis:               # official image
-  localstack:          # AWS services locally (SQS emulation)
+  postgres:             # official image
+  redis:                # official image
+  localstack:           # AWS services locally (SQS emulation)
 ```
 
 ### Key concepts in the compose file
@@ -220,15 +220,15 @@ docker-compose down -v           # Stop + clean volumes
          ▼
 ┌─────────────────────────────────────────────────────────┐
 │  build-and-push (matrix: runs once per changed service) │
-│                                                           │
-│  1. Checkout code                                         │
-│  2. AWS Auth via OIDC (no static keys!)                  │
-│  3. Login to Amazon ECR                                   │
-│  4. Setup Python → Run pytest                            │
-│  5. docker build -t <ECR_URL>/<service>:<git-sha>        │
-│  6. Trivy scan (HIGH/CRITICAL CVEs)                      │
-│  7. docker push (only on main branch)                    │
-│  8. Update image tag in gitops/ → git commit + push      │
+│                                                         │
+│  1. Checkout code                                       │
+│  2. AWS Auth via OIDC (no static keys!)                 │
+│  3. Login to Amazon ECR                                 │
+│  4. Setup Python → Run pytest                           │
+│  5. docker build -t <ECR_URL>/<service>:<git-sha>       │
+│  6. Trivy scan (HIGH/CRITICAL CVEs)                     │
+│  7. docker push (only on main branch)                   │
+│  8. Update image tag in gitops/ → git commit + push     │
 └─────────────────────────────────────────────────────────┘
 ```
 
