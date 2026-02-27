@@ -50,6 +50,43 @@ output "sqs_dlq_url" {
   value       = module.sqs.dlq_url
 }
 
+# ── New module outputs ───────────────────────────────────────────────────────
+
+output "sns_critical_topic_arn" {
+  description = "SNS topic ARN for critical alerts"
+  value       = module.sns.critical_topic_arn
+}
+
+output "sns_warning_topic_arn" {
+  description = "SNS topic ARN for warning alerts"
+  value       = module.sns.warning_topic_arn
+}
+
+output "cloudwatch_dashboard_url" {
+  description = "URL to the CloudWatch overview dashboard"
+  value       = module.cloudwatch.dashboard_url
+}
+
+output "irsa_order_service_role_arn" {
+  description = "IAM role ARN for order-service (annotate K8s ServiceAccount with this)"
+  value       = module.irsa.order_service_role_arn
+}
+
+output "irsa_user_service_role_arn" {
+  description = "IAM role ARN for user-service"
+  value       = module.irsa.user_service_role_arn
+}
+
+output "irsa_notification_service_role_arn" {
+  description = "IAM role ARN for notification-service"
+  value       = module.irsa.notification_service_role_arn
+}
+
+output "irsa_external_secrets_role_arn" {
+  description = "IAM role ARN for External Secrets Operator"
+  value       = module.irsa.external_secrets_role_arn
+}
+
 # ── Convenience: kubeconfig command ──────────────────────────────────────────
 output "configure_kubectl" {
   description = "Run this to configure kubectl"

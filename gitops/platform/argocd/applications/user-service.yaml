@@ -1,4 +1,6 @@
-# ArgoCD Application — User Service
+# =============================================================================
+# ArgoCD Application — User Service (Helm)
+# =============================================================================
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -11,10 +13,17 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
-  source:
-    repoURL: https://github.com/YOUR_USERNAME/kubeflow-ops.git
-    targetRevision: main
-    path: gitops/apps/user-service/base
+  sources:
+    - repoURL: https://github.com/YOUR_USERNAME/kubeflow-ops.git
+      targetRevision: main
+      ref: repo
+    - repoURL: https://github.com/YOUR_USERNAME/kubeflow-ops.git
+      targetRevision: main
+      path: gitops/charts/microservice
+      helm:
+        valueFiles:
+          - $repo/gitops/apps/user-service/values.yaml
+          - $repo/gitops/apps/user-service/values-dev.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: kubeflow-ops

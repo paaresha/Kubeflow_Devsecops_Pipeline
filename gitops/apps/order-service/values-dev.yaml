@@ -1,0 +1,19 @@
+# =============================================================================
+# Order Service — Dev Environment Overrides
+# =============================================================================
+# Budget-friendly settings for development.
+# =============================================================================
+
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 128Mi
+
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 3

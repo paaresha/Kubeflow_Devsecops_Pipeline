@@ -75,3 +75,35 @@ validate-docker: ## Build all Docker images locally
 	docker build -t user-service:test apps/user-service/
 	docker build -t notification-service:test apps/notification-service/
 	@echo "✅ All Docker images built successfully"
+
+# ── Helm ─────────────────────────────────────────────────────────────────────
+
+helm-template: ## Render Helm templates (dry run) for all services
+	@echo "── order-service ──"
+	helm template order-service gitops/charts/microservice/ \
+		-f gitops/apps/order-service/values.yaml \
+		-f gitops/apps/order-service/values-dev.yaml
+	@echo "── user-service ──"
+	helm template user-service gitops/charts/microservice/ \
+		-f gitops/apps/user-service/values.yaml \
+		-f gitops/apps/user-service/values-dev.yaml
+	@echo "── notification-service ──"
+	helm template notification-service gitops/charts/microservice/ \
+		-f gitops/apps/notification-service/values.yaml \
+		-f gitops/apps/notification-service/values-dev.yaml
+
+helm-lint: ## Lint Helm chart
+	helm lint gitops/charts/microservice/ \
+		-f gitops/apps/order-service/values.yaml \
+		-f gitops/apps/order-service/values-dev.yaml
+
+helm-deploy-dev: ## Deploy all services to dev (requires kubectl context)
+	@for svc in order-service user-service notification-service; do \
+		echo "🚀 Deploying $$svc (dev)..."; \
+		helm upgrade --install $$svc gitops/charts/microservice/ \
+			-f gitops/apps/$$svc/values.yaml \
+			-f gitops/apps/$$svc/values-dev.yaml \
+			--namespace kubeflow-ops --create-namespace; \
+	done
+	@echo "✅ All services deployed to dev"
+

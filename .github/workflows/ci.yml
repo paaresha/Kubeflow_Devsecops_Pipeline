@@ -20,11 +20,11 @@ on:
   push:
     branches: [main]
     paths:
-      - 'apps/**'
+      - "apps/**"
   pull_request:
     branches: [main]
     paths:
-      - 'apps/**'
+      - "apps/**"
 
 # Cancel previous runs on the same branch (saves CI minutes)
 concurrency:
@@ -37,9 +37,9 @@ env:
 # ── Permissions ──────────────────────────────────────────────────────────────
 # Minimal permissions following least privilege principle
 permissions:
-  contents: write       # To commit updated image tags
-  id-token: write       # For OIDC authentication with AWS (no access keys!)
-  pull-requests: write  # To comment scan results on PRs
+  contents: write # To commit updated image tags
+  id-token: write # For OIDC authentication with AWS (no access keys!)
+  pull-requests: write # To comment scan results on PRs
 
 jobs:
   # ── Detect which services changed ────────────────────────────────────────
@@ -81,7 +81,7 @@ jobs:
             port: 8003
         exclude:
           - service:
-              changed: 'false'
+              changed: "false"
 
     steps:
       - name: Checkout code
@@ -105,8 +105,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
+          cache: "pip"
           cache-dependency-path: apps/${{ matrix.service.name }}/requirements.txt
 
       # ── Run Unit Tests ───────────────────────────────────────────────
@@ -115,7 +115,35 @@ jobs:
           cd apps/${{ matrix.service.name }}
           pip install -r requirements.txt
           pytest tests/ -v --tb=short || true
-        continue-on-error: true  # Don't block on test failures in non-main branches
+        continue-on-error: true # Don't block on test failures in non-main branches
+
+      # ── SonarQube Analysis ────────────────────────────────────────────
+      # Static code analysis: detects bugs, code smells, security vulnerabilities.
+      # Quality gate blocks merge if coverage < 70% or critical bugs found.
+      - name: SonarQube Analysis
+        if: ${{ secrets.SONAR_TOKEN != '' }}
+        uses: SonarSource/sonarcloud-github-action@master
+        with:
+          projectBaseDir: apps/${{ matrix.service.name }}
+          args: >
+            -Dsonar.projectKey=kubeflow-ops-${{ matrix.service.name }}
+            -Dsonar.organization=${{ secrets.SONAR_ORG }}
+            -Dsonar.sources=.
+            -Dsonar.tests=tests/
+            -Dsonar.python.version=3.12
+            -Dsonar.python.coverage.reportPaths=coverage.xml
+            -Dsonar.exclusions=**/tests/**,**/venv/**,**/__pycache__/**
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── SonarQube Quality Gate ────────────────────────────────────────
+      - name: SonarQube Quality Gate
+        if: ${{ secrets.SONAR_TOKEN != '' }}
+        uses: SonarSource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       # ── Build Docker Image ───────────────────────────────────────────
       - name: Build Docker image
@@ -133,9 +161,9 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ steps.ecr-login.outputs.registry }}/kubeflow-ops-${{ matrix.service.name }}:${{ github.sha }}
-          format: 'table'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '0'  # Set to '1' to fail on vulnerabilities
+          format: "table"
+          severity: "HIGH,CRITICAL"
+          exit-code: "0" # Set to '1' to fail on vulnerabilities
 
       # ── Push to ECR ──────────────────────────────────────────────────
       - name: Push to ECR
@@ -148,24 +176,32 @@ jobs:
           docker push $ECR_REGISTRY/kubeflow-ops-${{ matrix.service.name }}:latest
           echo "✅ Pushed: $ECR_REGISTRY/kubeflow-ops-${{ matrix.service.name }}:$IMAGE_TAG"
 
-      # ── Update GitOps Image Tag ──────────────────────────────────────
-      # This commit triggers ArgoCD to deploy the new version!
-      - name: Update image tag in GitOps
+      # ── Install yq (for Helm values updates) ──────────────────────────
+      - name: Install yq
+        if: github.ref == 'refs/heads/main'
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      # ── Update Helm Values (GitOps Image Tag) ─────────────────────────
+      # Updates image.repository and image.tag in the service's values.yaml.
+      # This commit triggers ArgoCD to redeploy via Helm!
+      - name: Update image tag in Helm values
         if: github.ref == 'refs/heads/main'
         env:
           IMAGE_TAG: ${{ github.sha }}
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
         run: |
-          FULL_IMAGE="$ECR_REGISTRY/kubeflow-ops-${{ matrix.service.name }}:$IMAGE_TAG"
+          VALUES_FILE="gitops/apps/${{ matrix.service.name }}/values.yaml"
+          FULL_IMAGE="$ECR_REGISTRY/kubeflow-ops-${{ matrix.service.name }}"
 
-          # Replace IMAGE_PLACEHOLDER or existing image with the new one
-          if [ "${{ matrix.service.name }}" = "order-service" ]; then
-            sed -i "s|image: .*|image: $FULL_IMAGE|g" gitops/apps/order-service/base/deployment.yaml
-          elif [ "${{ matrix.service.name }}" = "user-service" ]; then
-            sed -i "s|image: .*|image: $FULL_IMAGE|g" gitops/apps/user-service/base/all.yaml
-          elif [ "${{ matrix.service.name }}" = "notification-service" ]; then
-            sed -i "s|image: .*|image: $FULL_IMAGE|g" gitops/apps/notification-service/base/all.yaml
-          fi
+          echo "🔄 Updating $VALUES_FILE"
+          echo "   image.repository: $FULL_IMAGE"
+          echo "   image.tag: $IMAGE_TAG"
+
+          # Update image.repository and image.tag in the Helm values file
+          yq -i ".image.repository = \"$FULL_IMAGE\"" "$VALUES_FILE"
+          yq -i ".image.tag = \"$IMAGE_TAG\"" "$VALUES_FILE"
 
           # Commit and push the change
           git config user.name "github-actions[bot]"

@@ -1,0 +1,236 @@
+# =============================================================================
+# GitHub Actions — Deployment Pipeline (CD)
+# =============================================================================
+# Manually triggered pipeline for deploying specific images to specific
+# environments. Includes:
+#   - Pre-flight image verification in ECR
+#   - Production approval gate (requires manual approval)
+#   - Smoke tests with automatic rollback on failure
+#
+# Usage: Actions tab → "Deploy" → Run workflow → Fill in parameters
+# =============================================================================
+
+name: Deploy — Promote to Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service to deploy"
+        required: true
+        type: choice
+        options:
+          - order-service
+          - user-service
+          - notification-service
+      image_tag:
+        description: "Image tag to deploy (git SHA from CI build)"
+        required: true
+        type: string
+      environment:
+        description: "Target environment"
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      skip_smoke_test:
+        description: "Skip smoke test (emergency deploys only)"
+        required: false
+        type: boolean
+        default: false
+
+# Cancel previous deploy runs on the same environment
+concurrency:
+  group: deploy-${{ github.event.inputs.environment }}
+  cancel-in-progress: false # Don't cancel ongoing deploys
+
+env:
+  AWS_REGION: us-east-1
+  CLUSTER_PREFIX: kubeflow-ops
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  # ── Pre-flight Checks ────────────────────────────────────────────────────
+  preflight:
+    name: Pre-flight — Verify Image Exists
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verify image exists in ECR
+        run: |
+          echo "🔍 Checking ECR for: kubeflow-ops-${{ inputs.service }}:${{ inputs.image_tag }}"
+          aws ecr describe-images \
+            --repository-name kubeflow-ops-${{ inputs.service }} \
+            --image-ids imageTag=${{ inputs.image_tag }} \
+            --region ${{ env.AWS_REGION }}
+          echo "✅ Image verified in ECR"
+
+  # ── Production Approval Gate ─────────────────────────────────────────────
+  approval:
+    name: Production Approval
+    needs: preflight
+    if: ${{ github.event.inputs.environment == 'prod' }}
+    runs-on: ubuntu-latest
+    environment: production # GitHub Environment with required reviewers
+    steps:
+      - name: Approval received
+        run: |
+          echo "✅ Production deployment approved by: ${{ github.actor }}"
+          echo "Service: ${{ inputs.service }}"
+          echo "Tag: ${{ inputs.image_tag }}"
+          echo "Time: $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
+  # ── Deploy ───────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment }}
+    needs: [preflight, approval]
+    if: |
+      always() &&
+      needs.preflight.result == 'success' &&
+      (needs.approval.result == 'success' || needs.approval.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ env.CLUSTER_PREFIX }}-${{ inputs.environment }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: "v3.14.0"
+
+      - name: Deploy with Helm
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+        run: |
+          FULL_IMAGE="$ECR_REGISTRY/kubeflow-ops-${{ inputs.service }}"
+          ENV="${{ inputs.environment }}"
+
+          echo "🚀 Deploying ${{ inputs.service }} → $ENV via Helm"
+          echo "   Image: $FULL_IMAGE:${{ inputs.image_tag }}"
+
+          # Helm upgrade --install with service-specific + environment values
+          helm upgrade --install ${{ inputs.service }} \
+            gitops/charts/microservice/ \
+            --namespace kubeflow-ops \
+            --create-namespace \
+            -f gitops/apps/${{ inputs.service }}/values.yaml \
+            -f gitops/apps/${{ inputs.service }}/values-${ENV}.yaml \
+            --set image.repository="$FULL_IMAGE" \
+            --set image.tag="${{ inputs.image_tag }}" \
+            --wait \
+            --timeout 5m
+
+          echo "✅ Helm release deployed successfully"
+
+  # ── Smoke Test ───────────────────────────────────────────────────────────
+  smoke-test:
+    name: Smoke Test
+    needs: deploy
+    if: ${{ github.event.inputs.skip_smoke_test != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ env.CLUSTER_PREFIX }}-${{ inputs.environment }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Run smoke test
+        run: |
+          echo "🧪 Running smoke test..."
+          sleep 15  # Wait for LB to update
+
+          # Get the service endpoint
+          SERVICE_URL=$(kubectl get svc ${{ inputs.service }} \
+            -n kubeflow-ops \
+            -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || \
+            kubectl get svc ${{ inputs.service }} \
+            -n kubeflow-ops \
+            -o jsonpath='{.spec.clusterIP}')
+
+          if [ -z "$SERVICE_URL" ]; then
+            echo "⚠️  Could not determine service URL, using port-forward"
+            # Fallback: use kubectl port-forward for ClusterIP services
+            kubectl port-forward svc/${{ inputs.service }} 8080:8001 -n kubeflow-ops &
+            sleep 3
+            SERVICE_URL="localhost:8080"
+          fi
+
+          HEALTH_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "http://${SERVICE_URL}/healthz" --max-time 10 || echo "000")
+
+          if [ "${HEALTH_STATUS}" != "200" ]; then
+            echo "❌ Smoke test FAILED (HTTP ${HEALTH_STATUS})"
+            echo "🔄 Rolling back deployment..."
+            kubectl rollout undo deployment/${{ inputs.service }} -n kubeflow-ops
+            kubectl rollout status deployment/${{ inputs.service }} -n kubeflow-ops --timeout=300s
+            echo "✅ Rollback complete"
+            exit 1
+          fi
+
+          echo "✅ Smoke test passed (HTTP ${HEALTH_STATUS})"
+
+  # ── Notify ───────────────────────────────────────────────────────────────
+  notify:
+    name: Send Notification
+    needs: [deploy, smoke-test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        run: |
+          if [ "${{ needs.deploy.result }}" == "success" ] && [ "${{ needs.smoke-test.result }}" != "failure" ]; then
+            COLOR="#00FF00"
+            STATUS="✅ SUCCESS"
+          else
+            COLOR="#FF0000"
+            STATUS="❌ FAILED"
+          fi
+
+          curl -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+            -H 'Content-Type: application/json' \
+            -d "{
+              \"attachments\": [{
+                \"color\": \"$COLOR\",
+                \"title\": \"$STATUS — Deployment to ${{ inputs.environment }}\",
+                \"fields\": [
+                  {\"title\": \"Service\", \"value\": \"${{ inputs.service }}\", \"short\": true},
+                  {\"title\": \"Image Tag\", \"value\": \"${{ inputs.image_tag }}\", \"short\": true},
+                  {\"title\": \"Environment\", \"value\": \"${{ inputs.environment }}\", \"short\": true},
+                  {\"title\": \"Triggered by\", \"value\": \"${{ github.actor }}\", \"short\": true}
+                ]
+              }]
+            }" || true

@@ -1,0 +1,37 @@
+# =============================================================================
+# Order Service — Helm Values (Base)
+# =============================================================================
+# Service-specific configuration. The CI pipeline updates image.tag here.
+# =============================================================================
+
+name: order-service
+containerPort: 8001
+
+image:
+  repository: IMAGE_PLACEHOLDER
+  tag: latest
+
+service:
+  port: 8001
+
+# ── Environment Variables ────────────────────────────────────────────────────
+env:
+  - name: DATABASE_URL
+    valueFrom:
+      secretKeyRef:
+        name: db-credentials
+        key: url
+  - name: SQS_QUEUE_URL
+    valueFrom:
+      configMapKeyRef:
+        name: app-config
+        key: sqs-queue-url
+  - name: USER_SERVICE_URL
+    value: "http://user-service.kubeflow-ops.svc.cluster.local:8002"
+  - name: AWS_REGION
+    valueFrom:
+      configMapKeyRef:
+        name: app-config
+        key: aws-region
+  - name: OTLP_ENDPOINT
+    value: "tempo.observability.svc.cluster.local:4317"

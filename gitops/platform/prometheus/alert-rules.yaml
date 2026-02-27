@@ -44,6 +44,77 @@ spec:
             summary: "High latency on {{ $labels.service }}"
             description: "P95 latency is {{ $value }}s on {{ $labels.service }}"
 
+        # Alert: Service down (no successful health checks for 2 minutes)
+        - alert: ServiceDown
+          expr: |
+            up{job=~"order-service|user-service|notification-service"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.job }} is DOWN"
+            description: "{{ $labels.job }} has been unreachable for 2+ minutes. Check pod status."
+
+    # ── Business Alerts ────────────────────────────────────────────────
+    - name: business.rules
+      rules:
+        # Alert: Order creation failures (>10% failure rate)
+        - alert: OrderCreationFailures
+          expr: |
+            sum(rate(http_requests_total{service="order-service",method="POST",path="/orders",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{service="order-service",method="POST",path="/orders"}[5m]))
+            > 0.1
+          for: 3m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Order creation failure rate > 10%"
+            description: "{{ $value | humanizePercentage }} of order creation requests are failing"
+            runbook: "docs/runbook.md#high-error-rate"
+
+        # Alert: No orders in last 15 minutes (during business hours)
+        - alert: NoOrdersReceived
+          expr: |
+            sum(increase(http_requests_total{service="order-service",method="POST",path="/orders",status="201"}[15m])) == 0
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "No orders received in 15 minutes"
+            description: "Zero successful order creations in the last 15 minutes. Check if service is reachable."
+
+        # Alert: User service lookup failures (impacts order creation)
+        - alert: UserServiceLookupFailures
+          expr: |
+            sum(rate(http_requests_total{service="order-service",method="GET",path=~"/users/.*",status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{service="order-service",method="GET",path=~"/users/.*"}[5m]))
+            > 0.05
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "User validation failing (impacts order creation)"
+            description: "order-service cannot validate users — {{ $value | humanizePercentage }} lookup failure rate"
+
+        # Alert: SQS message processing lag (notification delay)
+        - alert: NotificationProcessingLag
+          expr: |
+            sum(increase(http_requests_total{service="notification-service",path="/process",status="200"}[5m])) == 0
+            and
+            sum(increase(http_requests_total{service="order-service",method="POST",path="/orders",status="201"}[5m])) > 0
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Notifications not being processed"
+            description: "Orders are being created but notification-service is not processing them. Check SQS consumer."
+
     # ── Kubernetes Alerts ──────────────────────────────────────────────
     - name: kubernetes.rules
       rules:
@@ -91,3 +162,43 @@ spec:
           annotations:
             summary: "High CPU on {{ $labels.instance }}"
             description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+    # ── Capacity Alerts ────────────────────────────────────────────────
+    - name: capacity.rules
+      rules:
+        # Alert: HPA at max replicas (can't scale further)
+        - alert: HPAMaxedOut
+          expr: |
+            kube_horizontalpodautoscaler_status_current_replicas
+            == kube_horizontalpodautoscaler_spec_max_replicas
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "HPA {{ $labels.horizontalpodautoscaler }} is at max replicas"
+            description: "{{ $labels.horizontalpodautoscaler }} has been at max capacity for 15+ minutes. Consider increasing maxReplicas."
+
+        # Alert: Sudden traffic spike (>2x normal rate)
+        - alert: TrafficSpike
+          expr: |
+            sum(rate(http_requests_total[5m])) by (service)
+            > 2 * sum(rate(http_requests_total[1h])) by (service)
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Traffic spike on {{ $labels.service }}"
+            description: "{{ $labels.service }} traffic is 2x above the 1-hour average. HPA should be scaling."
+
+        # Alert: Persistent volume nearly full
+        - alert: PVCNearlyFull
+          expr: |
+            kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes > 0.85
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "PVC {{ $labels.persistentvolumeclaim }} is 85% full"
+            description: "Volume {{ $labels.persistentvolumeclaim }} in {{ $labels.namespace }} is running low on space"

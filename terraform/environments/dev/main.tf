@@ -116,3 +116,39 @@ module "sqs" {
   project_name = var.project_name
   environment  = var.environment
 }
+
+# ── Module: SNS (Alert Notifications) ────────────────────────────────────────
+module "sns" {
+  source = "../../modules/sns"
+
+  project_name = var.project_name
+  environment  = var.environment
+  alert_email  = ""  # Set to your email: "you@example.com"
+}
+
+# ── Module: CloudWatch (Dashboard + Alarms) ──────────────────────────────────
+module "cloudwatch" {
+  source = "../../modules/cloudwatch"
+
+  project_name           = var.project_name
+  environment            = var.environment
+  sns_critical_topic_arn = module.sns.critical_topic_arn
+  sns_warning_topic_arn  = module.sns.warning_topic_arn
+  rds_instance_id        = "${var.project_name}-${var.environment}-postgres"
+  elasticache_cluster_id = "${var.project_name}-${var.environment}-redis"
+  sqs_queue_name         = "${var.project_name}-${var.environment}-order-events"
+  sqs_dlq_name           = "${var.project_name}-${var.environment}-order-events-dlq"
+}
+
+# ── Module: IRSA (Per-Service IAM Roles) ─────────────────────────────────────
+module "irsa" {
+  source = "../../modules/irsa"
+
+  project_name      = var.project_name
+  environment       = var.environment
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  oidc_provider_url = module.eks.oidc_provider_url
+  sqs_queue_arn     = module.sqs.queue_arn
+  sqs_dlq_arn       = ""
+  rds_secret_arn    = module.rds.secret_arn
+}

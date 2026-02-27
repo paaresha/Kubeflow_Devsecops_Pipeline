@@ -1,0 +1,33 @@
+# =============================================================================
+# Notification Service — Helm Values (Base)
+# =============================================================================
+
+name: notification-service
+containerPort: 8003
+
+image:
+  repository: IMAGE_PLACEHOLDER
+  tag: latest
+
+service:
+  port: 8003
+
+# Notification service needs SQS + Redis, no direct DB access
+env:
+  - name: SQS_QUEUE_URL
+    valueFrom:
+      configMapKeyRef:
+        name: app-config
+        key: sqs-queue-url
+  - name: REDIS_URL
+    valueFrom:
+      configMapKeyRef:
+        name: app-config
+        key: redis-url
+  - name: AWS_REGION
+    valueFrom:
+      configMapKeyRef:
+        name: app-config
+        key: aws-region
+  - name: OTLP_ENDPOINT
+    value: "tempo.observability.svc.cluster.local:4317"

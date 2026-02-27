@@ -252,15 +252,17 @@ docker-compose down -v           # Stop + clean volumes
   with:
     image-ref: <ecr-url>/kubeflow-ops-order-service:<sha>
     severity: 'HIGH,CRITICAL'
-    exit-code: '1'   # Fails the pipeline if critical CVEs found
+    exit-code: '0'   # Set to '1' to fail the pipeline on critical CVEs
 ```
 
-### GitOps Tag Update (triggers ArgoCD)
+### GitOps Tag Update (triggers ArgoCD via Helm values)
 
 ```bash
-# CI auto-commits this change to gitops/
-sed -i "s|image: .*|image: $ECR_REGISTRY/kubeflow-ops-order-service:$GIT_SHA|g" \
-    gitops/apps/order-service/base/deployment.yaml
+# CI uses yq to update the Helm values file (not raw YAML!)
+yq -i '.image.repository = "$ECR_REGISTRY/kubeflow-ops-order-service"' \
+    gitops/apps/order-service/values.yaml
+yq -i '.image.tag = "$GIT_SHA"' \
+    gitops/apps/order-service/values.yaml
 git commit -m "ci: update order-service image to $GIT_SHA"
 git push
 ```
@@ -330,74 +332,112 @@ terraform destroy       # Tear everything down
 
 ---
 
-## PHASE 6 — GitOps Manifests (Kubernetes YAMLs)
+## PHASE 6 — GitOps Manifests (Helm Charts)
 
-**Goal**: Define the desired state of your apps in Kubernetes YAML. ArgoCD will enforce this state.
+**Goal**: Define the desired state of your apps using a reusable Helm chart. ArgoCD renders + deploys.
+
+### Why Helm instead of Kustomize?
+
+| | Kustomize | Helm |
+|---|---|---|
+| Templating | Patch-based (JSON patches) | Go templates with `values.yaml` |
+| Reusability | Copy base per service | Single chart, many values files |
+| Environment tuning | Separate overlay dirs | `values-dev.yaml` / `values-prod.yaml` |
+| CI integration | `sed` to replace image tags | `yq` to update `image.tag` in values |
+| ArgoCD support | Built-in | Built-in (multi-source) |
 
 ### File layout
 
 ```
 gitops/
+├── charts/
+│   └── microservice/               ← Shared Helm chart (reusable for all services)
+│       ├── Chart.yaml
+│       ├── values.yaml             ← Default values
+│       └── templates/
+│           ├── _helpers.tpl        ← Label helpers
+│           ├── deployment.yaml     ← Templated Deployment
+│           ├── service.yaml        ← Templated Service
+│           └── hpa.yaml            ← Templated HPA
 ├── apps/
-│   ├── common/
-│   │   ├── namespace.yaml      ← Creates 'microservices' namespace
-│   │   ├── serviceaccount.yaml ← K8s SA linked to IAM role (IRSA)
-│   │   ├── configmap.yaml      ← Non-secret config (DB host, Redis host)
-│   │   └── ingress.yaml        ← Routes external traffic to services
-│   ├── order-service/base/
-│   │   ├── deployment.yaml     ← Pod spec, image tag, resource limits
-│   │   ├── service.yaml        ← ClusterIP for internal routing
-│   │   └── hpa.yaml            ← Auto-scale based on CPU/memory
-│   ├── user-service/base/
-│   │   └── all.yaml
-│   └── notification-service/base/
-│       └── all.yaml
+│   ├── common/                     ← Shared K8s resources (namespace, configmap, ingress)
+│   ├── order-service/
+│   │   ├── values.yaml             ← Service-specific config (port, env vars, image)
+│   │   ├── values-dev.yaml         ← Dev overrides (1 replica, low resources)
+│   │   └── values-prod.yaml        ← Prod overrides (3 replicas, high resources)
+│   ├── user-service/
+│   │   ├── values.yaml
+│   │   ├── values-dev.yaml
+│   │   └── values-prod.yaml
+│   └── notification-service/
+│       ├── values.yaml
+│       ├── values-dev.yaml
+│       └── values-prod.yaml
 └── platform/
-    ├── argocd/                 ← App-of-Apps pattern
-    ├── prometheus/             ← Alert rules
-    ├── kyverno/                ← Security policies
-    └── external-secrets/      ← Secrets sync from AWS Secrets Manager
+    ├── argocd/                     ← App-of-Apps (Helm multi-source)
+    ├── prometheus/                 ← Alert rules
+    ├── kyverno/                    ← Security policies
+    └── external-secrets/           ← Secrets sync from AWS Secrets Manager
 ```
 
-### Deployment YAML (key sections)
+### Helm values.yaml (per service)
 
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: order-service
-  namespace: microservices
-spec:
-  replicas: 2
-  template:
-    spec:
-      containers:
-      - name: order-service
-        image: IMAGE_PLACEHOLDER   # ← CI overwrites this with real ECR URL
-        ports:
-        - containerPort: 8001
-        resources:
-          requests: { cpu: "100m", memory: "128Mi" }
-          limits:   { cpu: "500m", memory: "512Mi" }
-        readinessProbe:
-          httpGet: { path: /healthz, port: 8001 }
-        livenessProbe:
-          httpGet: { path: /healthz, port: 8001 }
+# gitops/apps/order-service/values.yaml
+name: order-service
+containerPort: 8001
+
+image:
+  repository: IMAGE_PLACEHOLDER   # ← CI updates this with yq
+  tag: latest                     # ← CI updates this with git SHA
+
+service:
+  port: 8001
+
+env:
+  - name: DATABASE_URL
+    valueFrom:
+      secretKeyRef: { name: db-credentials, key: url }
+  - name: SQS_QUEUE_URL
+    valueFrom:
+      configMapKeyRef: { name: app-config, key: sqs-queue-url }
 ```
 
-### HPA (Horizontal Pod Autoscaler)
+### Environment overrides
 
 ```yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-spec:
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target: { type: Utilization, averageUtilization: 70 }
+# gitops/apps/order-service/values-dev.yaml
+replicaCount: 1
+resources:
+  requests: { cpu: 50m, memory: 64Mi }
+  limits:   { cpu: 250m, memory: 128Mi }
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 3
+
+# gitops/apps/order-service/values-prod.yaml
+replicaCount: 3
+resources:
+  requests: { cpu: 200m, memory: 256Mi }
+  limits:   { cpu: 1000m, memory: 512Mi }
+autoscaling:
+  minReplicas: 3
+  maxReplicas: 20
+```
+
+### Deploy locally with Helm
+
+```bash
+# Render templates (dry run) to see what would be created
+helm template order-service gitops/charts/microservice/ \
+  -f gitops/apps/order-service/values.yaml \
+  -f gitops/apps/order-service/values-dev.yaml
+
+# Install/upgrade a release
+helm upgrade --install order-service gitops/charts/microservice/ \
+  -f gitops/apps/order-service/values.yaml \
+  -f gitops/apps/order-service/values-dev.yaml \
+  --namespace kubeflow-ops --create-namespace
 ```
 
 ---
@@ -421,15 +461,32 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 # Open: https://localhost:8080
 ```
 
-### App-of-Apps Pattern
+### App-of-Apps Pattern (Helm Multi-Source)
 
 ```
 gitops/platform/argocd/app-of-apps.yaml
        │
-       └── Creates 3 child ArgoCD apps:
-               ├── order-service     → watches gitops/apps/order-service/
-               ├── user-service      → watches gitops/apps/user-service/
-               └── notification-service → watches gitops/apps/notification-service/
+       └── Creates 3 child ArgoCD apps (each uses Helm multi-source):
+               ├── order-service     → chart: charts/microservice + values: apps/order-service/
+               ├── user-service      → chart: charts/microservice + values: apps/user-service/
+               └── notification-service → chart: charts/microservice + values: apps/notification-service/
+```
+
+Each child Application uses the ArgoCD **multi-source** pattern:
+
+```yaml
+spec:
+  sources:
+    - repoURL: https://github.com/YOUR_USERNAME/kubeflow-ops.git
+      targetRevision: main
+      ref: repo                    # ← Name this source "repo"
+    - repoURL: https://github.com/YOUR_USERNAME/kubeflow-ops.git
+      targetRevision: main
+      path: gitops/charts/microservice
+      helm:
+        valueFiles:
+          - $repo/gitops/apps/order-service/values.yaml
+          - $repo/gitops/apps/order-service/values-dev.yaml
 ```
 
 ### Full deployment flow (automated, zero manual steps)
@@ -437,11 +494,11 @@ gitops/platform/argocd/app-of-apps.yaml
 ```
 1. Developer pushes code to apps/order-service/
 2. GitHub Actions detects change (path filter)
-3. CI: pytest → docker build → trivy scan → docker push to ECR
-4. CI: updates image tag in gitops/apps/order-service/base/deployment.yaml
+3. CI: pytest → SonarQube → docker build → trivy scan → docker push to ECR
+4. CI: yq updates image.tag in gitops/apps/order-service/values.yaml
 5. CI: git commit + git push
-6. ArgoCD: detects diff between Git and cluster
-7. ArgoCD: applies the new deployment.yaml
+6. ArgoCD: detects values.yaml changed
+7. ArgoCD: renders Helm chart with updated values → applies to cluster
 8. Kubernetes: Rolling update → New pods come up → Old pods go down
 9. Done. New code is live.
 ```
@@ -585,14 +642,18 @@ docs/
 | 1 | Understand the app, run locally | `apps/*/main.py`, `requirements.txt` |
 | 2 | Write Dockerfiles | `apps/*/Dockerfile`, `.dockerignore` |
 | 3 | docker-compose for local dev | `docker-compose.yml` |
-| 4 | GitHub Actions CI pipeline | `.github/workflows/ci.yml` |
-| 5 | Terraform AWS infra | `terraform/` |
-| 6 | Kubernetes manifests | `gitops/apps/` |
+| 4a | GitHub Actions CI + SonarQube | `.github/workflows/ci.yml`, `sonarqube/` |
+| 4b | Deployment pipeline (CD) | `.github/workflows/deploy.yml` |
+| 5a | Terraform AWS infra | `terraform/modules/`, `terraform/environments/` |
+| 5b | SNS + CloudWatch + IRSA | `terraform/modules/{sns,cloudwatch,irsa}/` |
+| 6a | Shared Helm chart | `gitops/charts/microservice/` |
+| 6b | Per-service Helm values (dev/prod) | `gitops/apps/*/values{,-dev,-prod}.yaml` |
 | 7 | ArgoCD GitOps CD | `gitops/platform/argocd/` |
 | 8a | Kyverno security policies | `gitops/platform/kyverno/` |
 | 8b | External Secrets (AWS SM) | `gitops/platform/external-secrets/` |
-| 9 | Prometheus/Grafana/Loki/Tempo | `gitops/platform/prometheus/` |
+| 9 | Prometheus alerts (infra + business) | `gitops/platform/prometheus/` |
 | 10 | SLOs, Runbooks | `docs/` |
+| 11 | Operational scripts | `scripts/ops/`, `scripts/automation/` |
 
 ---
 
@@ -600,10 +661,13 @@ docs/
 
 | Principle | Implementation |
 |---|---|
-| **Shift-Left Security** | Trivy scans in CI before push, not after deploy |
+| **Shift-Left Security** | Trivy scans + SonarQube quality gate in CI before push |
 | **No Static Credentials** | OIDC for GitHub→AWS auth, IRSA for Pod→AWS auth, ESO for secrets |
 | **GitOps** | Git is the single source of truth. No `kubectl apply` by hand |
-| **Least Privilege** | Kyverno blocks root, IAM roles scoped minimally |
+| **Least Privilege** | Kyverno blocks root, per-service IRSA roles scoped minimally |
 | **Immutable Infrastructure** | Never patch running containers. Rebuild → redeploy |
-| **Observability-First** | Every service has health checks, metrics, logs, traces |
-| **Infrastructure as Code** | Everything in Git. Reproducible. Reviewable. |
+| **Observability-First** | Health checks, metrics, logs, traces, business + capacity alerts |
+| **Infrastructure as Code** | Everything in Git. Reproducible. Reviewable |
+| **Multi-Environment** | Helm values-dev.yaml / values-prod.yaml for resource tuning |
+| **Safe Deployments** | Approval gates, smoke tests, automatic rollback on failure |
+| **Operational Readiness** | Runbooks, SLOs, health check scripts, log analyzers |

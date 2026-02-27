@@ -1,0 +1,105 @@
+# =============================================================================
+# Default Values — Shared Microservice Chart
+# =============================================================================
+# These are sensible defaults. Each service overrides what it needs in its
+# own values.yaml. Environment-specific values go in values-dev.yaml / values-prod.yaml.
+# =============================================================================
+
+# ── Service Identity ─────────────────────────────────────────────────────────
+name: my-service
+team: platform
+version: v1
+
+# ── Container Image ──────────────────────────────────────────────────────────
+image:
+  repository: IMAGE_PLACEHOLDER
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# ── Replicas (base — overridden per environment) ─────────────────────────────
+replicaCount: 2
+
+# ── Container Port ───────────────────────────────────────────────────────────
+containerPort: 8000
+
+# ── Service ──────────────────────────────────────────────────────────────────
+service:
+  type: ClusterIP
+  port: 8000
+
+# ── ServiceAccount ───────────────────────────────────────────────────────────
+serviceAccount:
+  name: kubeflow-ops-sa
+
+# ── Resource Requests & Limits ───────────────────────────────────────────────
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+# ── Health Probes ────────────────────────────────────────────────────────────
+probes:
+  startup:
+    path: /healthz
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 30
+  liveness:
+    path: /healthz
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    path: /readyz
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+# ── HPA (Horizontal Pod Autoscaler) ─────────────────────────────────────────
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      maxPodsPerMinute: 1
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      maxPodsPerMinute: 4
+
+# ── Security Context ─────────────────────────────────────────────────────────
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# ── Pod Anti-Affinity ────────────────────────────────────────────────────────
+podAntiAffinity:
+  enabled: true
+
+# ── Prometheus Scraping ──────────────────────────────────────────────────────
+prometheus:
+  enabled: true
+  path: /metrics
+
+# ── Environment Variables ────────────────────────────────────────────────────
+# These are injected into the container.
+# Format:
+#   env:
+#     - name: VAR_NAME
+#       value: "literal-value"
+#     - name: SECRET_VAR
+#       valueFrom:
+#         secretKeyRef:
+#           name: secret-name
+#           key: secret-key
+env: []
+
+# ── Namespace ────────────────────────────────────────────────────────────────
+namespace: kubeflow-ops

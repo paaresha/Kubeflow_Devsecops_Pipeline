@@ -1,0 +1,12 @@
+# =============================================================================
+# Shared Microservice Helm Chart
+# =============================================================================
+# A reusable chart for all 3 KubeFlow Ops microservices.
+# Each service passes its own values.yaml to customize this chart.
+# =============================================================================
+apiVersion: v2
+name: microservice
+description: Shared Helm chart for KubeFlow Ops microservices
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
