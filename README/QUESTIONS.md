@@ -34,8 +34,8 @@
 12. How do you handle Terraform state locking?
 13. What is pod anti-affinity and why is it configured here?
 14. Explain the Prometheus scraping model — how does it discover your pods?
-15. What is the difference between Loki and ELK/EFK stack?
-16. What is distributed tracing and how does OpenTelemetry work?
+15. What is the RED method in monitoring and how does this project use it?
+16. How does Alertmanager route alerts to different channels based on severity?
 17. How would you handle a database migration in this setup?
 18. What is idempotency and how does the notification service achieve it?
 19. Explain NAT Gateway — why is it in the public subnet, and why do private subnets need it?

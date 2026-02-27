@@ -33,7 +33,7 @@
 5. **Check Grafana dashboards**
    - Open SRE Overview dashboard
    - Look at error rate graph — when did it start?
-   - Check distributed traces in Tempo for failing requests
+   - Check pod logs: `kubectl logs -n kubeflow-ops -l app=<service-name> --tail=200`
 
 ---
 
@@ -92,7 +92,11 @@
    - Are there slow queries? Check RDS Performance Insights
    - Is there connection pool exhaustion?
 
-4. **Check distributed trace** in Grafana Tempo for slow spans
+4. **Check pod logs for slow operations**
+
+   ```bash
+   kubectl logs -n kubeflow-ops -l app=<service-name> --tail=200
+   ```
 
 ---
 

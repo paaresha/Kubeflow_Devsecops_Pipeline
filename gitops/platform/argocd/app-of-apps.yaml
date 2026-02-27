@@ -15,7 +15,6 @@
 #   ├── Child App: user-service
 #   ├── Child App: notification-service
 #   ├── Child App: prometheus-stack
-#   ├── Child App: loki
 #   ├── Child App: kyverno
 #   └── Child App: external-secrets
 #
@@ -36,7 +35,7 @@ kind: Application
 metadata:
   # This is the PARENT Application — it manages all other Applications
   name: kubeflow-ops-root
-  namespace: argocd  # ArgoCD always runs in the 'argocd' namespace
+  namespace: argocd # ArgoCD always runs in the 'argocd' namespace
 
   # Finalizer ensures that when this app is deleted, ArgoCD cleans up
   # all child resources in the cluster
@@ -49,13 +48,13 @@ spec:
 
   # SOURCE: Where ArgoCD should look for Kubernetes manifests
   source:
-    repoURL: https://github.com/YOUR_USERNAME/kubeflow-ops.git  # ← Replace with your repo
-    targetRevision: main  # Which branch to watch
-    path: gitops/platform/argocd/applications  # Folder containing child Application YAMLs
+    repoURL: https://github.com/YOUR_USERNAME/kubeflow-ops.git # ← Replace with your repo
+    targetRevision: main # Which branch to watch
+    path: gitops/platform/argocd/applications # Folder containing child Application YAMLs
 
   # DESTINATION: Where to deploy (which cluster and namespace)
   destination:
-    server: https://kubernetes.default.svc  # The cluster ArgoCD is running in
+    server: https://kubernetes.default.svc # The cluster ArgoCD is running in
     namespace: argocd
 
   # SYNC POLICY: How ArgoCD should handle changes
@@ -70,7 +69,7 @@ spec:
       prune: true
 
     syncOptions:
-      - CreateNamespace=true  # Auto-create namespaces if they don't exist
+      - CreateNamespace=true # Auto-create namespaces if they don't exist
 
     retry:
       limit: 5

@@ -9,9 +9,8 @@ Developer Push → GitHub Actions (CI) → ECR → ArgoCD (CD) → EKS Cluster
                     │                                          │
                     ├─ Lint, Test, Scan                        ├─ 3 Microservices
                     ├─ Build Docker Image                      ├─ Prometheus + Grafana
-                    ├─ Push to ECR                             ├─ Loki (Logs)
-                    └─ Update GitOps Manifest                  ├─ Tempo (Traces)
-                                                               ├─ Kyverno (Policies)
+                    ├─ Push to ECR                             ├─ Alertmanager
+                    └─ Update GitOps Manifest                  ├─ Kyverno (Policies)
                                                                ├─ External Secrets
                                                                └─ Karpenter (Autoscaling)
 ```
@@ -26,8 +25,6 @@ Developer Push → GitHub Actions (CI) → ECR → ArgoCD (CD) → EKS Cluster
 | **Container** | Docker | Multi-stage builds |
 | **Orchestration** | Amazon EKS | Managed Kubernetes |
 | **Metrics** | Prometheus + Grafana | SLIs, SLOs, dashboards |
-| **Logs** | Loki + Promtail | Centralized log aggregation |
-| **Traces** | Tempo | Distributed tracing |
 | **Alerts** | Alertmanager | Slack/SNS notifications |
 | **Secrets** | External Secrets Operator | AWS Secrets Manager → K8s |
 | **Policy** | Kyverno | Security guardrails |

@@ -59,7 +59,7 @@ Developer Push
 [Phase 8] Security Layer (Kyverno Policies + External Secrets Operator)
      │
      ▼
-[Phase 9] Observability (Prometheus + Grafana + Loki + Tempo + Alertmanager)
+[Phase 9] Observability (Prometheus + Grafana + Alertmanager)
      │
      ▼
 [Phase 10] SLOs, Runbooks & Documentation
@@ -375,7 +375,7 @@ gitops/
 │       └── values-prod.yaml
 └── platform/
     ├── argocd/                     ← App-of-Apps (Helm multi-source)
-    ├── prometheus/                 ← Alert rules
+    ├── prometheus/                 ← Alert rules (PrometheusRule CRDs)
     ├── kyverno/                    ← Security policies
     └── external-secrets/           ← Secrets sync from AWS Secrets Manager
 ```
@@ -576,7 +576,7 @@ spec:
 
 ## PHASE 9 — Observability Stack
 
-**Goal**: Full visibility into your system — metrics, logs, traces, and alerts.
+**Goal**: Full visibility into your system — metrics, dashboards, and alerts.
 
 ### Stack deployed via ArgoCD (Helm charts in gitops/platform/)
 
@@ -584,10 +584,10 @@ spec:
 Prometheus    → Scrapes metrics from all pods (CPU, memory, request rate, error rate)
 Grafana       → Dashboards for your SLIs/SLOs
 Alertmanager  → Routes alerts to Slack / PagerDuty / SNS when SLOs breach
-Loki          → Aggregates logs from all pods (like ELK but lighter)
-Promtail      → Agent on each node, ships logs to Loki
-Tempo         → Distributed tracing (request flows across services)
 ```
+
+> All three are deployed together via the `kube-prometheus-stack` Helm chart.
+> This also installs **node-exporter** (host metrics) and **kube-state-metrics** (K8s object metrics).
 
 ### Alert rules (`gitops/platform/prometheus/`)
 
@@ -628,7 +628,7 @@ docs/
 ### Runbook topics
 
 - How to rollback a bad deployment (ArgoCD)
-- How to access pod logs (via Loki + Grafana, or kubectl)
+- How to access pod logs (via `kubectl logs` or Grafana dashboards)
 - How to scale manually in an emergency
 - How to restore from database backup
 - How to debug a crashing pod
@@ -666,7 +666,7 @@ docs/
 | **GitOps** | Git is the single source of truth. No `kubectl apply` by hand |
 | **Least Privilege** | Kyverno blocks root, per-service IRSA roles scoped minimally |
 | **Immutable Infrastructure** | Never patch running containers. Rebuild → redeploy |
-| **Observability-First** | Health checks, metrics, logs, traces, business + capacity alerts |
+| **Observability-First** | Health checks, metrics, dashboards, business + capacity alerts |
 | **Infrastructure as Code** | Everything in Git. Reproducible. Reviewable |
 | **Multi-Environment** | Helm values-dev.yaml / values-prod.yaml for resource tuning |
 | **Safe Deployments** | Approval gates, smoke tests, automatic rollback on failure |

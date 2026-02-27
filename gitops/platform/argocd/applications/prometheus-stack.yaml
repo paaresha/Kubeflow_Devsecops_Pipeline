@@ -32,16 +32,8 @@ spec:
           enabled: true
           adminPassword: "admin"  # Change this! Use External Secrets in production.
 
-          # Pre-install data sources so Grafana connects to Prometheus, Loki, Tempo
-          additionalDataSources:
-            - name: Loki
-              type: loki
-              url: http://loki.observability.svc.cluster.local:3100
-              access: proxy
-            - name: Tempo
-              type: tempo
-              url: http://tempo.observability.svc.cluster.local:3100
-              access: proxy
+          # Prometheus is auto-configured as the default data source
+          # by kube-prometheus-stack — no additional sources needed.
 
           # Grafana dashboard auto-discovery
           sidecar:
@@ -88,4 +80,4 @@ spec:
       prune: true
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true  # Required for CRDs in kube-prometheus-stack
+      - ServerSideApply=true # Required for CRDs in kube-prometheus-stack

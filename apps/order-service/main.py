@@ -22,8 +22,9 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from prometheus_fastapi_instrumentator import Instrumentator
 
 # ── OpenTelemetry Tracing Setup ──────────────────────────────────────────────
-# This sends trace data to Tempo (via the OTLP exporter) so you can see
-# the full lifecycle of a request across all 3 microservices in Grafana.
+# Optional distributed tracing via OTLP exporter. This is a no-op if no
+# tracing backend (e.g., Jaeger, Tempo) is running — the setup is wrapped
+# in a try/except to ensure it never blocks the application.
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
@@ -141,7 +142,7 @@ app = FastAPI(
 # Prometheus metrics — automatically exposes /metrics endpoint for Prometheus to scrape
 Instrumentator().instrument(app).expose(app)
 
-# OpenTelemetry tracing — sends spans to Tempo
+# OpenTelemetry tracing — optional, fails gracefully if no backend is available
 try:
     resource = Resource.create({"service.name": SERVICE_NAME})
     provider = TracerProvider(resource=resource)

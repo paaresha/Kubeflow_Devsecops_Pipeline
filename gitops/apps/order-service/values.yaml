@@ -33,5 +33,3 @@ env:
       configMapKeyRef:
         name: app-config
         key: aws-region
-  - name: OTLP_ENDPOINT
-    value: "tempo.observability.svc.cluster.local:4317"

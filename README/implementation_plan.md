@@ -140,14 +140,6 @@ Using **Kustomize** (built into `kubectl`, no extra tool needed) with a base + o
 - **kube-prometheus-stack** Helm values — deploys Prometheus, Grafana, Alertmanager, node-exporter in one shot
 - Custom alert rules: high error rate, pod restarts, high latency, node pressure
 
-#### [NEW] `gitops/platform/loki/`
-- Loki + Promtail Helm values for log aggregation
-- Logs from all pods automatically collected
-
-#### [NEW] `gitops/platform/tempo/`
-- Grafana Tempo Helm values for distributed tracing
-- FastAPI apps instrumented with OpenTelemetry
-
 #### [NEW] `dashboards/`
 - `sre-overview.json` — Cluster health, request rates, error rates, latency (RED method)
 - `order-service.json` — Per-service metrics

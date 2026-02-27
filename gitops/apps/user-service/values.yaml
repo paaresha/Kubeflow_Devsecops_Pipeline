@@ -19,5 +19,3 @@ env:
       secretKeyRef:
         name: db-credentials
         key: url
-  - name: OTLP_ENDPOINT
-    value: "tempo.observability.svc.cluster.local:4317"
