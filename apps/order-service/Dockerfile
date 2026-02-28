@@ -2,7 +2,7 @@
 # Multi-Stage Dockerfile — Order Service
 # =============================================================================
 # Stage 1: Install dependencies in a temporary layer
-# Stage 2: Copy only the installed packages + app code into a slim final image
+# Stage 2: Copy only the installed packages +app code into a slim final image
 # Result: ~120MB image instead of ~900MB. Faster deploys, smaller attack surface.
 # =============================================================================
 
