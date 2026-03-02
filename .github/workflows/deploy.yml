@@ -43,7 +43,7 @@ on:
 
 # Cancel previous deploy runs on the same environment
 concurrency:
-  group: deploy-${{ github.event.inputs.environment }}
+  group: deploy-${{ inputs.environment }}
   cancel-in-progress: false # Don't cancel ongoing deploys
 
 env:
@@ -79,7 +79,7 @@ jobs:
   approval:
     name: Production Approval
     needs: preflight
-    if: ${{ github.event.inputs.environment == 'prod' }}
+    if: ${{ inputs.environment == 'prod' }}
     runs-on: ubuntu-latest
     environment: production # GitHub Environment with required reviewers
     steps:
@@ -92,7 +92,7 @@ jobs:
 
   # ── Deploy ───────────────────────────────────────────────────────────────
   deploy:
-    name: Deploy to ${{ github.event.inputs.environment }}
+    name: Deploy to ${{ inputs.environment }}
     needs: [preflight, approval]
     if: |
       always() &&
@@ -152,7 +152,7 @@ jobs:
   smoke-test:
     name: Smoke Test
     needs: deploy
-    if: ${{ github.event.inputs.skip_smoke_test != 'true' }}
+    if: ${{ !inputs.skip_smoke_test }}
     runs-on: ubuntu-latest
     steps:
       - name: Configure AWS Credentials (OIDC)

@@ -10,45 +10,45 @@ Go through The pahse_custom file and whole project . Now you need to Start expla
 
 Let me start by reading the `Phases_Custom.md` file and exploring the project structure thoroughly.
 
-*Viewed [Phases_Custom.md](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/Phases_Custom.md)*
+_Viewed [Phases_Custom.md](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/Phases_Custom.md)_
 
-*Listed directory [Kubeflow_Devsecops_Pipeline](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline)*
+_Listed directory [Kubeflow_Devsecops_Pipeline](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline)_
 
 ### Planner Response
 
 Now let me explore the `apps/` folder and the Phase 1 relevant files in detail.
 
-*Listed directory [apps](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps)*
+_Listed directory [apps](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps)_
 
-*Listed directory [.github](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/.github)*
+_Listed directory [.github](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/.github)_
 
-*Listed directory [order-service](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/order-service)*
+_Listed directory [order-service](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/order-service)_
 
-*Listed directory [user-service](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service)*
+_Listed directory [user-service](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service)_
 
-*Listed directory [notification-service](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/notification-service)*
+_Listed directory [notification-service](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/notification-service)_
 
-*Viewed [requirements.txt](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/order-service/requirements.txt)*
+_Viewed [requirements.txt](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/order-service/requirements.txt)_
 
-*Viewed [requirements.txt](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service/requirements.txt)*
+_Viewed [requirements.txt](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service/requirements.txt)_
 
-*Viewed [requirements.txt](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/notification-service/requirements.txt)*
+_Viewed [requirements.txt](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/notification-service/requirements.txt)_
 
 ### Planner Response
 
 Now let me read the tests for each service too:
 
-*Listed directory [tests](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/order-service/tests)*
+_Listed directory [tests](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/order-service/tests)_
 
-*Listed directory [tests](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service/tests)*
+_Listed directory [tests](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service/tests)_
 
-*Listed directory [tests](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/notification-service/tests)*
+_Listed directory [tests](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/notification-service/tests)_
 
-*Viewed [test_main.py](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/order-service/tests/test_main.py)*
+_Viewed [test_main.py](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/order-service/tests/test_main.py)_
 
-*Viewed [test_main.py](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service/tests/test_main.py)*
+_Viewed [test_main.py](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service/tests/test_main.py)_
 
-*Viewed [test_main.py](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/notification-service/tests/test_main.py)*
+_Viewed [test_main.py](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/notification-service/tests/test_main.py)_
 
 ### Planner Response
 
@@ -602,17 +602,17 @@ Lets do Phase 2
 
 Let me read all the Dockerfile and [.dockerignore](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service/.dockerignore:0:0-0:0) files for all three services.
 
-*Viewed [Dockerfile](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/order-service/Dockerfile)*
+_Viewed [Dockerfile](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/order-service/Dockerfile)_
 
-*Viewed [.dockerignore](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/order-service/.dockerignore)*
+_Viewed [.dockerignore](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/order-service/.dockerignore)_
 
-*Viewed [Dockerfile](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service/Dockerfile)*
+_Viewed [Dockerfile](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service/Dockerfile)_
 
-*Viewed [.dockerignore](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service/.dockerignore)*
+_Viewed [.dockerignore](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/user-service/.dockerignore)_
 
-*Viewed [Dockerfile](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/notification-service/Dockerfile)*
+_Viewed [Dockerfile](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/notification-service/Dockerfile)_
 
-*Viewed [.dockerignore](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/notification-service/.dockerignore)*
+_Viewed [.dockerignore](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/apps/notification-service/.dockerignore)_
 
 ### Planner Response
 
@@ -1215,11 +1215,11 @@ Lets do Phase 3
 
 Let me read the [docker-compose.yml](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/docker-compose.yml:0:0-0:0) and any related scripts for Phase 3.
 
-*Viewed [docker-compose.yml](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/docker-compose.yml)*
+_Viewed [docker-compose.yml](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/docker-compose.yml)_
 
-*Listed directory [scripts](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts)*
+_Listed directory [scripts](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts)_
 
-*Viewed [localstack-init.sh](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/localstack-init.sh)*
+_Viewed [localstack-init.sh](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/localstack-init.sh)_
 
 ### Planner Response
 
@@ -2091,21 +2091,21 @@ Lets do Phase 4
 
 Let me read all the GitHub Actions workflow files first.
 
-*Listed directory [workflows](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/.github/workflows)*
+_Listed directory [workflows](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/.github/workflows)_
 
-*Viewed [ci.yml](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/.github/workflows/ci.yml)*
+_Viewed [ci.yml](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/.github/workflows/ci.yml)_
 
-*Viewed [deploy.yml](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/.github/workflows/deploy.yml)*
+_Viewed [deploy.yml](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/.github/workflows/deploy.yml)_
 
-*Viewed [terraform.yml](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/.github/workflows/terraform.yml)*
+_Viewed [terraform.yml](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/.github/workflows/terraform.yml)_
 
 ### Planner Response
 
 I have all three workflow files. Let me also read the sonarqube config to cover it as part of Phase 4's SonarQube section.
 
-*Listed directory [sonarqube](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/sonarqube)*
+_Listed directory [sonarqube](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/sonarqube)_
 
-*Viewed [sonar-project.properties](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/sonarqube/sonar-project.properties)*
+_Viewed [sonar-project.properties](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/sonarqube/sonar-project.properties)_
 
 ### Planner Response
 
@@ -2996,7 +2996,7 @@ This is the **pre-flight check** — fly the plane only if you've verified the f
 approval:
   name: Production Approval
   needs: preflight
-  if: ${{ inputs.environment == 'prod' }}
+  if: ${{ github.event.inputs.environment == 'prod' }}
   runs-on: ubuntu-latest
   environment: production  # GitHub Environment with required reviewers
   steps:
@@ -3443,3 +3443,1441 @@ You now have **fully automated CI/CD**:
 - ✅ Terraform changes reviewed before apply
 
 But the CI pipeline references ECR repositories, an EKS cluster, an S3 state bucket, and DynamoDB lock table — **none of which exist yet**. That's **Phase 5: Terraform** — where you provision ALL the AWS infrastructure those pipelines are trying to use. 🚀
+
+### User Input
+
+You didnt exlpina about helm or u will do it in later phase ?
+
+### Planner Response
+
+## 🧠 What is Helm? (Context for Phase 4)
+
+### The Problem Helm Solves
+
+You know Kubernetes uses YAML files to deploy things. A basic deployment of `order-service` to Kubernetes requires at minimum:
+
+```
+Deployment.yaml     → defines the pod, image, replicas, env vars
+Service.yaml        → defines networking (how to reach the pod)
+HPA.yaml            → defines auto-scaling rules
+ConfigMap.yaml      → shared config
+```
+
+Now multiply by 3 services × 3 environments (dev, staging, prod):
+
+```
+3 services × 4 files × 3 environments = 36 YAML files
+```
+
+And 90% of the content is **identical** — only things like `replicas`, `image tag`, `resource limits`, and `namespace` change between environments.
+
+Managing 36 nearly-identical YAMLs is a maintenance nightmare. Change a label? Update it in 36 places.
+
+---
+
+### What Helm IS
+
+**Helm is a package manager + templating engine for Kubernetes.** Think of it like:
+
+- `apt`/`yum` for Linux → Helm for Kubernetes
+- A template engine like Jinja2, but the output is Kubernetes YAML
+
+**The three core concepts:**
+
+| Concept | What it is | Analogy |
+|---|---|---|
+| **Chart** | A directory of templates + default values | An `.rpm` or `.deb` package |
+| **Values** | The variables that customize the chart | Config file for the package |
+| **Release** | A deployed instance of a chart in a cluster | An installed application |
+
+---
+
+### How It Works (Simplified)
+
+```
+gitops/charts/microservice/        ← ONE chart for ALL 3 services
+├── templates/
+│   ├── deployment.yaml  ← has {{ .Values.image.tag }}, {{ .Values.replicas }}
+│   ├── service.yaml     ← has {{ .Values.service.port }}
+│   └── hpa.yaml         ← has {{ .Values.hpa.maxReplicas }}
+└── values.yaml          ← defaults: replicas: 1, image.tag: latest
+
+gitops/apps/order-service/
+├── values.yaml          ← CI writes: image.tag: a1b2c3... (the git SHA)
+└── values-prod.yaml     ← prod overrides: replicas: 3, resources: high
+```
+
+When you run:
+
+```bash
+helm upgrade --install order-service gitops/charts/microservice/ \
+  -f gitops/apps/order-service/values.yaml \
+  -f gitops/apps/order-service/values-prod.yaml \
+  --set image.tag="a1b2c3..."
+```
+
+Helm does this internally:
+
+```
+template + merged values → rendered Kubernetes YAML → kubectl apply
+```
+
+The `{{ .Values.image.tag }}` in the template becomes `a1b2c3...` in the final output. You get correct, environment-specific Kubernetes YAML without ever duplicating the structure.
+
+---
+
+### Why `helm upgrade --install` in deploy.yml Makes Sense Now
+
+```bash
+helm upgrade --install order-service \   # release name
+  gitops/charts/microservice/ \          # chart (ONE template for all services)
+  -f gitops/apps/order-service/values.yaml \       # base values
+  -f gitops/apps/order-service/values-dev.yaml \   # env override
+  --set image.tag="${{ inputs.image_tag }}"         # runtime override from CI
+  --wait          # wait for pods to be Ready
+  --timeout 5m    # give up after 5 min
+```
+
+- **Same chart** used for `order-service`, `user-service`, `notification-service` — only values differ
+- `-f` files layer on top of each other (later overrides earlier)
+- `--set` is the highest-priority override — what CI injects at runtime
+- `--wait` is what makes the smoke test step meaningful — Helm confirms pods are live before declaring success
+
+---
+
+**Everything else about Helm** — the `Chart.yaml`, `_helpers.tpl`, `deployment.yaml` template syntax, `HPA`, and values file structure — will all be covered **line by line in Phase 6** where the actual files are. By then you'll have the right infrastructure (Phase 5 Terraform/EKS) as the mental foundation too.
+
+Ready to move on to Phase 5 (Terraform) whenever you are! 🚀
+
+### User Input
+
+Lets Do Phase 5
+
+# 🏗️ Phase 5 — Terraform: Infrastructure as Code (Deep-Dive)
+
+> **Your job as a DevOps Engineer in Phase 5:** You provision ALL cloud infrastructure on AWS using Terraform. No clicking in the AWS Console — ever. Every resource is defined as code, version-controlled in Git, reviewed on PRs, and applied automatically by the CI pipeline you built in Phase 4.
+
+---
+
+## 🧠 Concepts You Must Understand First
+
+### The Terraform Module Pattern
+
+You already know Terraform basics. This project uses the **module pattern** — the professional way to organize Terraform code at scale:
+
+```
+terraform/
+├── modules/          ← Reusable building blocks (each module = one AWS concern)
+│   ├── vpc/
+│   ├── eks/
+│   ├── ecr/
+│   ├── rds/
+│   ├── elasticache/
+│   ├── sqs/
+│   ├── irsa/
+│   ├── sns/
+│   └── cloudwatch/
+└── environments/
+    └── dev/          ← Calls the modules, passes environment-specific values
+        ├── backend.tf
+        ├── main.tf
+        └── outputs.tf
+```
+
+**The analogy:** Modules are like **functions** in programming. The [environments/dev/main.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/environments/dev/main.tf:0:0-0:0) is like `main()` — it calls each function (module) with specific arguments. If you add a `staging` or `prod` environment later, it's just a new folder in `environments/` that calls the same modules with different values (bigger instances, multi-AZ, etc.).
+
+### The Three File Types in Every Module
+
+Every module has the same 3 files:
+
+| File | Purpose |
+|---|---|
+| [variables.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/vpc/variables.tf:0:0-0:0) | Declares **inputs** — what the caller must/can pass in |
+| [main.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/sns/main.tf:0:0-0:0) | The actual resources to create |
+| [outputs.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/vpc/outputs.tf:0:0-0:0) | Declares **outputs** — values the caller can use after apply |
+
+The data flows like this:
+
+```
+environments/dev/main.tf
+  │
+  ├── module "vpc" { project_name = "kubeflow-ops" }  ← passes inputs
+  │         ↓
+  │    modules/vpc/variables.tf  (receives inputs)
+  │    modules/vpc/main.tf       (creates resources)
+  │    modules/vpc/outputs.tf    (exposes vpc_id, subnet_ids)
+  │         │
+  └── module "eks" { vpc_id = module.vpc.vpc_id }  ← uses vpc output as eks input
+```
+
+### The Provision Order (Dependency Chain)
+
+```
+backend.tf Bootstrap (one-time, manual)
+       ↓
+  1. VPC           (network foundation — everything lives inside it)
+       ↓
+  2. ECR           (container registry — no VPC dependency, parallel ok)
+  2. EKS           (needs VPC's subnet IDs)
+       ↓
+  3. RDS           (needs VPC + EKS security group ID)
+  3. ElastiCache   (needs VPC + EKS security group ID)
+  3. SQS           (no VPC needed, pure AWS service)
+       ↓
+  4. SNS           (no VPC needed, depends on nothing)
+  4. CloudWatch    (depends on SNS topic ARNs)
+       ↓
+  5. IRSA          (depends on EKS OIDC provider ARN + SQS ARN + RDS secret ARN)
+```
+
+Terraform resolves this automatically from the `module.X.output_Y` references in [main.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/sns/main.tf:0:0-0:0). You don't need to manually specify the order.
+
+---
+
+## 📄 File 1: [terraform/environments/dev/backend.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/environments/dev/backend.tf:0:0-0:0) — Line by Line
+
+> **Start here. Always.** Before any Terraform can run, the backend must exist. This is the one thing you bootstrap manually.
+
+---
+
+**Lines 1–15:** Comments — Critical bootstrap instructions:
+
+```hcl
+# IMPORTANT: You must create the S3 bucket and DynamoDB table FIRST:
+#   aws s3 mb s3://kubeflow-ops-terraform-state --region us-east-1
+#   aws dynamodb create-table \
+#     --table-name kubeflow-ops-terraform-lock \
+#     ...
+#     --billing-mode PAY_PER_REQUEST
+```
+
+**Why create these manually before `terraform init`?** This is the classic chicken-and-egg problem — Terraform needs a place to store its state, but you can't Terraform that storage location because Terraform isn't initialized yet. So these two resources (S3 bucket + DynamoDB table) are the only AWS resources ever created manually. Everything else is Terraform.
+
+### 🧠 New Concept: Terraform Remote State
+
+**What is Terraform State?**
+Terraform maintains a **state file** (`terraform.tfstate`) — a JSON file that maps every resource in your [.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/sns/main.tf:0:0-0:0) files to its real AWS resource ID. Without state, Terraform has no memory — it couldn't know what it already created.
+
+**Default (local) state:** `terraform.tfstate` on your laptop. Problems:
+
+- If your laptop breaks → state lost → Terraform doesn't know what exists
+- Two engineers run `terraform apply` simultaneously → corrupted state → destructive conflicts
+
+**Remote state (what this project uses):** State stored in S3:
+
+```
+S3 bucket: kubeflow-ops-terraform-state
+  └── dev/terraform.tfstate    ← encrypted, versioned state file
+```
+
+---
+
+**Lines 17–25:** The actual backend configuration:
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket         = "kubeflow-ops-terraform-state"
+    key            = "dev/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "kubeflow-ops-terraform-lock"
+    encrypt        = true
+  }
+}
+```
+
+**`terraform { backend "s3" { } }`** → The `terraform` block is a special meta-configuration block. `backend "s3"` selects the S3 backend type.
+
+**`bucket`** → Which S3 bucket stores the state file. Must already exist.
+
+**`key = "dev/terraform.tfstate"`** → The path/filename within the S3 bucket. Organizing by environment (`dev/`, `staging/`, `prod/`) means multiple environments share the same bucket but have separate state files.
+
+**`dynamodb_table = "kubeflow-ops-terraform-lock"`** → The DynamoDB table used for **state locking**.
+
+### 🧠 New Concept: State Locking (DynamoDB)
+
+When someone runs `terraform apply`, Terraform:
+
+1. Creates a **lock record** in DynamoDB (`LockID = "bucket/key"`)
+2. Applies changes
+3. Deletes the lock record
+
+If a second person tries `terraform apply` while the first is running → they find the lock → they get an error: _"Error acquiring the state lock."_ This prevents two concurrent applies from corrupting the state file.
+
+**`billing-mode PAY_PER_REQUEST`** (in the bootstrap CLI command) → DynamoDB billing mode. Pay per request = zero cost when idle (you only pay when Terraform actually uses it). Perfect for an infrequently written locking table.
+
+**`encrypt = true`** → Enable **server-side encryption** for the state file in S3. The state file contains sensitive data (RDS passwords in plaintext, ARNs, endpoints). Encrypting at rest is mandatory for security compliance.
+
+---
+
+## 📄 File 2: [terraform/environments/dev/main.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/environments/dev/main.tf:0:0-0:0) — Line by Line
+
+---
+
+### The `terraform` Block (Lines 8–25)
+
+```hcl
+terraform {
+  required_version = ">= 1.7.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.30"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+  }
+}
+```
+
+**`required_version = ">= 1.7.0"`** → Minimum Terraform CLI version. If someone tries to run with Terraform 1.5 → error. Prevents compatibility issues.
+
+**`required_providers`** → Declares which Terraform **providers** this configuration uses. Providers are plugins that know how to talk to specific APIs.
+
+| Provider | Purpose |
+|---|---|
+| `hashicorp/aws` | Talks to AWS APIs (creates EC2, EKS, S3, etc.) |
+| `hashicorp/random` | Generates random values (used for DB password in RDS module) |
+| `hashicorp/tls` | TLS certificate operations (used to get EKS OIDC thumbprint) |
+
+**`version = "~> 5.30"`** → Version constraint. `~>` means "compatible with" — allow patch versions (`5.30.x`) but not major/minor bumps. `5.31` is OK, `6.0` is not. This prevents breaking changes from new provider versions.
+
+`terraform init` downloads these providers from the [Terraform Registry](https://registry.terraform.io/) into `.terraform/providers/`.
+
+---
+
+### Provider Configuration (Lines 27–37)
+
+```hcl
+provider "aws" {
+  region = var.aws_region
+
+  default_tags {
+    tags = {
+      Project     = var.project_name
+      Environment = var.environment
+      ManagedBy   = "terraform"
+    }
+  }
+}
+```
+
+**`provider "aws"`** → Configures the AWS provider. `region = var.aws_region` sets the target AWS region for all resources.
+
+**`default_tags`** → **Every single AWS resource created by this Terraform will automatically get these tags.** This is a Terraform 3.38+ feature.
+
+Why tags matter for DevOps:
+
+- **Cost allocation** → AWS Cost Explorer can filter by `Project` tag → see exactly what this project costs
+- **Resource identification** → In the AWS console, every resource shows `ManagedBy: terraform` → you know never to delete it manually
+- **Compliance** → Many organizations require tags for all resources
+- **Automation** → Scripts can find all resources for a project using tag filters
+
+---
+
+### Variables (Lines 39–53)
+
+```hcl
+variable "project_name" {
+  type    = string
+  default = "kubeflow-ops"
+}
+
+variable "environment" {
+  type    = string
+  default = "dev"
+}
+
+variable "aws_region" {
+  type    = string
+  default = "us-east-1"
+}
+```
+
+**Inline variables** (defined in [main.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/sns/main.tf:0:0-0:0) rather than a separate [variables.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/vpc/variables.tf:0:0-0:0)) → allowed in Terraform, just less organized. These are simple defaults for the dev environment.
+
+**`default = "dev"`** → Without a `default`, you'd need to pass the value via `-var` flag or `terraform.tfvars` file. With defaults, running `terraform apply` with no extra flags works for the dev environment.
+
+**`type = string`** → Type constraint. Terraform will error if you pass a non-string value.
+
+---
+
+### Module: VPC (Lines 55–61)
+
+```hcl
+module "vpc" {
+  source = "../../modules/vpc"
+
+  project_name = var.project_name
+  environment  = var.environment
+}
+```
+
+**`module "vpc"`** → Instantiates the VPC module. The label `"vpc"` is the local name — referenced later as `module.vpc.vpc_id`.
+
+**`source = "../../modules/vpc"`** → Relative path to the module directory. Could also be a remote source (`github.com/org/repo//modules/vpc` or Terraform Registry).
+
+**Only 2 inputs passed** — because the VPC module's [variables.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/vpc/variables.tf:0:0-0:0) has defaults for everything else (`vpc_cidr`, `availability_zones`, `subnet_cidrs`). The caller only needs to provide what's required (no defaults).
+
+---
+
+### Module: EKS (Lines 63–77)
+
+```hcl
+module "eks" {
+  source = "../../modules/eks"
+
+  project_name       = var.project_name
+  environment        = var.environment
+  vpc_id             = module.vpc.vpc_id           # ← uses VPC output
+  private_subnet_ids = module.vpc.private_subnet_ids  # ← uses VPC output
+
+  # Budget-friendly settings for dev
+  node_instance_types = ["t3.medium"]
+  node_desired_size   = 2
+  node_min_size       = 1
+  node_max_size       = 4
+}
+```
+
+**`vpc_id = module.vpc.vpc_id`** → This is how modules chain together. The VPC module's output `vpc_id` (defined in [modules/vpc/outputs.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/vpc/outputs.tf:0:0-0:0)) is passed directly as the EKS module's input. Terraform automatically understands this creates a dependency: EKS must be created AFTER VPC.
+
+**`node_instance_types = ["t3.medium"]`** → Override the EKS module's default with a budget-friendly type. In prod, you'd use `["t3.large"]` or `["m5.xlarge"]`.
+
+**`node_desired_size = 2`** → 2 EC2 instances running as Kubernetes worker nodes. `min=1, max=4` is the autoscaling range.
+
+---
+
+### Module: ECR (Lines 79–86)
+
+```hcl
+module "ecr" {
+  source = "../../modules/ecr"
+
+  project_name  = var.project_name
+  environment   = var.environment
+  service_names = ["order-service", "user-service", "notification-service"]
+}
+```
+
+**`service_names`** → A list of service names. The ECR module uses `for_each` on this list to create one repository per service. Simple, scalable pattern.
+
+---
+
+### Modules: RDS, ElastiCache (Lines 88–110)
+
+```hcl
+module "rds" {
+  ...
+  eks_security_group_id = module.eks.cluster_security_group_id
+  instance_class        = "db.t3.micro"
+}
+
+module "elasticache" {
+  ...
+  eks_security_group_id = module.eks.cluster_security_group_id
+  node_type             = "cache.t3.micro"
+}
+```
+
+Both modules take `eks_security_group_id` → the Security Group of the EKS cluster. This is used inside the modules to create a firewall rule: **only EKS pods can access RDS/Redis** — not the public internet, not other AWS services.
+
+`db.t3.micro` and `cache.t3.micro` → smallest available instance sizes. Correct for dev; prod would use `db.t3.small`/`m5.large`.
+
+---
+
+### Module: SNS + CloudWatch (Lines 120–141)
+
+```hcl
+module "sns" {
+  ...
+  alert_email  = ""  # Set to your email: "you@example.com"
+}
+
+module "cloudwatch" {
+  ...
+  sns_critical_topic_arn = module.sns.critical_topic_arn
+  sns_warning_topic_arn  = module.sns.warning_topic_arn
+  rds_instance_id        = "${var.project_name}-${var.environment}-postgres"
+  ...
+}
+```
+
+CloudWatch depends on SNS (needs the topic ARNs to route alarms to). Terraform auto-detects this from `module.sns.critical_topic_arn`.
+
+**`alert_email = ""`** → Set this to receive alarm emails. Terraform creates an SNS subscription that sends you an email when CloudWatch alarms fire. The empty string means no email subscription (skipped via `count = var.alert_email != "" ? 1 : 0` in the SNS module).
+
+---
+
+### Module: IRSA (Lines 143–154)
+
+```hcl
+module "irsa" {
+  ...
+  oidc_provider_arn = module.eks.oidc_provider_arn
+  oidc_provider_url = module.eks.oidc_provider_url
+  sqs_queue_arn     = module.sqs.queue_arn
+  sqs_dlq_arn       = ""
+  rds_secret_arn    = module.rds.secret_arn
+}
+```
+
+IRSA is the last module — it needs outputs from EKS, SQS, and RDS. Terraform applies it last automatically.
+
+---
+
+## 📄 File 3: [terraform/environments/dev/outputs.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/environments/dev/outputs.tf:0:0-0:0) — Line by Line
+
+> Outputs are printed after `terraform apply` completes. They give you the real AWS values you need to configure everything else. Think of them as the "receipts" from infrastructure creation.
+
+**Line 8–11:**
+
+```hcl
+output "eks_cluster_name" {
+  description = "EKS cluster name (used in: aws eks update-kubeconfig --name <this>)"
+  value       = module.eks.cluster_name
+}
+```
+
+→ After apply, you copy this value into: `aws eks update-kubeconfig --name <this-value>`. This configures your `kubectl` to talk to EKS.
+
+**Line 18–21:**
+
+```hcl
+output "ecr_repository_urls" {
+  value = module.ecr.repository_urls
+}
+```
+
+→ Shows all ECR repository URLs. Use these to tag and push Docker images.
+
+**Lines 70–88: IRSA Role ARNs**
+
+```hcl
+output "irsa_order_service_role_arn" { ... }
+output "irsa_user_service_role_arn" { ... }
+output "irsa_notification_service_role_arn" { ... }
+output "irsa_external_secrets_role_arn" { ... }
+```
+
+→ These ARNs go into your Kubernetes `ServiceAccount` annotations (Phase 6/8). Critical values.
+
+**Lines 90–94: The convenience output**
+
+```hcl
+output "configure_kubectl" {
+  description = "Run this to configure kubectl"
+  value = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
+}
+```
+
+→ Terraform literally prints the exact command you need to run. At this point, you just copy-paste it.
+
+---
+
+## 📄 Module 1: `modules/vpc/` — Full Walkthrough
+
+---
+
+### [variables.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/vpc/variables.tf:0:0-0:0) — Every Variable
+
+```hcl
+variable "vpc_cidr" {
+  default = "10.0.0.0/16"        # 65,536 IP addresses
+}
+
+variable "availability_zones" {
+  default = ["us-east-1a", "us-east-1b"]
+}
+
+variable "public_subnet_cidrs" {
+  default = ["10.0.1.0/24", "10.0.2.0/24"]   # 254 IPs each
+}
+
+variable "private_subnet_cidrs" {
+  default = ["10.0.10.0/24", "10.0.20.0/24"]  # 254 IPs each
+}
+```
+
+**CIDR notation** (`10.0.0.0/16`): You know this from networking. `/16` = first 16 bits fixed → 65,536 addresses. `/24` = first 24 bits fixed → 256 addresses (254 usable). The private subnets use higher second octets (`10.0.10.x`, `10.0.20.x`) to avoid overlapping with public (`10.0.1.x`, `10.0.2.x`).
+
+**2 Availability Zones** → EKS requires at least 2 AZs for high availability. `us-east-1a` and `us-east-1b` are two physically separate data centres in N. Virginia.
+
+---
+
+### [main.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/sns/main.tf:0:0-0:0) — Every Resource
+
+---
+
+**Lines 13–23: `aws_vpc`**
+
+```hcl
+resource "aws_vpc" "main" {
+  cidr_block           = var.vpc_cidr
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Name = "${var.project_name}-${var.environment}-vpc"
+    ...
+  }
+}
+```
+
+**`resource "aws_vpc" "main"`** → Creates a VPC. `aws_vpc` = resource type (maps to AWS API). `"main"` = local name (used as `aws_vpc.main.id`).
+
+**`enable_dns_hostnames = true`** → Required for EKS. EKS nodes get DNS hostnames (e.g., `ip-10-0-10-5.ec2.internal`). Without this, EKS service discovery doesn't work.
+
+**`enable_dns_support = true`** → Enables the AWS DNS resolver inside the VPC. Required for all service-name resolution.
+
+**`${var.project_name}-${var.environment}-vpc`** → Resource naming convention: `kubeflow-ops-dev-vpc`. String interpolation in HCL uses `${}` syntax.
+
+---
+
+**Lines 27–34: `aws_internet_gateway`**
+
+```hcl
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+  ...
+}
+```
+
+**Internet Gateway (IGW)** → The "door to the internet" for a VPC. Without it, nothing inside the VPC can reach the internet (no pulling Docker images, no contacting AWS APIs).
+
+`aws_vpc.main.id` → References the VPC resource's `id` attribute. Terraform knows to create the VPC first because of this reference.
+
+---
+
+**Lines 39–55: `aws_subnet "public"` with `for_each`**
+
+```hcl
+resource "aws_subnet" "public" {
+  for_each = toset(var.public_subnet_cidrs)
+
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = each.key
+  availability_zone       = var.availability_zones[index(var.public_subnet_cidrs, each.key)]
+  map_public_ip_on_launch = true
+
+  tags = {
+    "kubernetes.io/role/elb"                                      = "1"
+    "kubernetes.io/cluster/${var.project_name}-${var.environment}" = "shared"
+  }
+}
+```
+
+**`for_each = toset(var.public_subnet_cidrs)`** → Creates **one subnet resource per CIDR** in the list. `toset()` converts the list to a set (for_each requires sets or maps, not lists).
+
+- First iteration: `each.key = "10.0.1.0/24"` → creates subnet in `us-east-1a`
+- Second iteration: `each.key = "10.0.2.0/24"` → creates subnet in `us-east-1b`
+
+**`index(var.public_subnet_cidrs, each.key)`** → Finds the position of the current CIDR in the list (0 or 1) → uses that position to look up the matching AZ from `availability_zones`. This pairs each CIDR with its correct AZ.
+
+**`map_public_ip_on_launch = true`** → Any EC2 instance launched in these public subnets automatically gets a public IP. Needed for the NAT Gateway (it uses an Elastic IP, but instances in public subnets need this set).
+
+**The Kubernetes tags** — Critical:
+
+```hcl
+"kubernetes.io/role/elb" = "1"
+```
+
+→ Tells the **AWS Load Balancer Controller** (runs inside EKS): "this is a public subnet — put Internet-facing Load Balancers here." Without this tag, the ALB can't find where to deploy.
+
+```hcl
+"kubernetes.io/cluster/kubeflow-ops-dev" = "shared"
+```
+
+→ Tells EKS: "this subnet is associated with this cluster." Required for EKS to use these subnets.
+
+---
+
+**Lines 60–74: `aws_subnet "private"`**
+
+Same pattern as public, but:
+
+- No `map_public_ip_on_launch` → private instances have NO public IPs
+- Tag: `kubernetes.io/role/internal-elb = "1"` → Internal Load Balancers go here (not internet-facing)
+- EKS worker nodes live here (private — no direct internet exposure)
+
+---
+
+**Lines 79–98: `aws_eip` + `aws_nat_gateway`**
+
+```hcl
+resource "aws_eip" "nat" {
+  domain = "vpc"
+}
+
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public["${var.public_subnet_cidrs[0]}"].id
+
+  depends_on = [aws_internet_gateway.main]
+}
+```
+
+### 🧠 New Concept: NAT Gateway
+
+**The problem:** EKS nodes are in private subnets (no public IPs). But they need to:
+
+- Pull Docker images from ECR (outbound HTTPS)
+- Call AWS APIs (S3, SQS, etc.)
+- Download OS updates
+
+**NAT Gateway solution:**
+
+```
+EKS Node (private subnet, 10.0.10.5)
+  │  outbound request to pull image from ECR
+  ▼
+NAT Gateway (public subnet, has Elastic IP: 52.x.x.x)
+  │  translates private IP → public Elastic IP
+  ▼
+Internet → ECR
+  │  response comes back to NAT Gateway
+  ▼
+NAT Gateway → EKS Node
+
+Nobody on the internet can INITIATE a connection to the EKS node
+(NAT is one-way — outbound only)
+```
+
+**`aws_eip "nat"`** → **Elastic IP** — a static public IPv4 address. The NAT Gateway needs a permanent public IP so that egress traffic has a consistent source IP (used for security group whitelisting downstream).
+
+**`domain = "vpc"`** → VPC-associated EIP (as opposed to Classic EC2, which is legacy).
+
+**`subnet_id = aws_subnet.public["10.0.1.0/24"].id`** → NAT Gateway lives in a **public** subnet (it needs internet access itself to route traffic out). References the first public subnet using the CIDR as the key (matching the `for_each` key).
+
+**`depends_on = [aws_internet_gateway.main]`** → Explicit dependency. The NAT Gateway can't route internet traffic if the Internet Gateway doesn't exist. Terraform usually infers dependencies automatically, but here there's no attribute reference — so you declare it explicitly.
+
+**"Single NAT Gateway"** comment: Production would have one NAT Gateway per AZ (N. Virginia zone A failure → zone B still working). Dev uses one for cost savings (~$32/month per NAT GW).
+
+---
+
+**Lines 102–148: Route Tables**
+
+```hcl
+# Public route table
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
+  }
+}
+
+# Private route table
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main.id
+  }
+}
+```
+
+**Route Table** = a routing rules table attached to subnets. It answers: "for traffic destined to X, send it to Y."
+
+**`cidr_block = "0.0.0.0/0"`** → Default route ("everything not matched by a more specific route").
+
+- **Public subnets** → `0.0.0.0/0 → Internet Gateway` = can reach internet directly
+- **Private subnets** → `0.0.0.0/0 → NAT Gateway` = can reach internet via NAT (outbound only)
+
+```hcl
+resource "aws_route_table_association" "public" {
+  for_each = aws_subnet.public
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.public.id
+}
+```
+
+**`for_each = aws_subnet.public`** → Iterates over all public subnets (created with `for_each` earlier). Associates each subnet with the public route table. Without association, a subnet uses the VPC's default route table.
+
+---
+
+### [outputs.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/vpc/outputs.tf:0:0-0:0)
+
+```hcl
+output "private_subnet_ids" {
+  value = [for s in aws_subnet.private : s.id]
+}
+```
+
+**`[for s in aws_subnet.private : s.id]`** → A Terraform **for expression** (like a list comprehension). Iterates over all private subnet resources and collects just their IDs into a list. This list is what `module.eks`, `module.rds`, and `module.elasticache` receive as `private_subnet_ids`.
+
+---
+
+## 📄 Module 2: `modules/eks/` — Full Walkthrough
+
+---
+
+### IAM for EKS — Two Roles (Lines 14–44, 117–153)
+
+EKS requires **two separate IAM roles**:
+
+```
+aws_iam_role "eks_cluster"   → assumed by the EKS CONTROL PLANE (AWS managed)
+aws_iam_role "eks_nodes"     → assumed by EC2 worker NODE instances
+```
+
+**Control Plane Role (Lines 16–44):**
+
+```hcl
+resource "aws_iam_role" "eks_cluster" {
+  assume_role_policy = jsonencode({
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Principal = { Service = "eks.amazonaws.com" }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+  role       = aws_iam_role.eks_cluster.name
+}
+```
+
+**`assume_role_policy`** → The **trust policy** — who is allowed to assume this role. `Service: "eks.amazonaws.com"` → only the EKS service can assume it (not you, not other services).
+
+**`AmazonEKSClusterPolicy`** → AWS managed policy. Gives the EKS control plane permissions to:
+
+- Create/modify ENIs (network interfaces for pods)
+- Write to CloudWatch Logs
+- Manage EC2 auto-scaling for nodes
+
+**`AmazonEKSVPCResourceController`** → Allows EKS to configure VPC networking for pods (Security Groups for Pods feature).
+
+---
+
+**Node Group Role (Lines 117–153):**
+
+```hcl
+resource "aws_iam_role" "eks_nodes" {
+  assume_role_policy = jsonencode({
+    Principal = { Service = "ec2.amazonaws.com" }  # ← EC2 instances assume this
+  })
+}
+
+# Three required policies for worker nodes:
+aws_iam_role_policy_attachment "eks_worker_node_policy"
+  → AmazonEKSWorkerNodePolicy         (node-to-cluster auth)
+aws_iam_role_policy_attachment "eks_cni_policy"
+  → AmazonEKS_CNI_Policy              (pod networking/IP assignment)
+aws_iam_role_policy_attachment "eks_container_registry"
+  → AmazonEC2ContainerRegistryReadOnly (pull images from ECR)
+```
+
+**Why 3 policies?**
+
+- **EKSWorkerNodePolicy** → Allows the node to register with the EKS cluster, describe EC2 resources
+- **EKS_CNI_Policy** → The VPC CNI plugin manages pod IPs. It needs to create/delete ENIs and assign IPs from the subnet
+- **ECRReadOnly** → Nodes must pull Docker images from ECR. Without this, every pod start fails with "ImagePullBackOff"
+
+---
+
+### Security Group for EKS (Lines 46–68)
+
+```hcl
+resource "aws_security_group" "eks_cluster" {
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+```
+
+**`egress` only, no `ingress`** → The Security Group here is for the EKS **control plane**. The API server's inbound rules are managed by EKS itself. The egress rule allows all outbound traffic (`protocol = "-1"` = all protocols).
+
+**`lifecycle { create_before_destroy = true }`** → If Terraform needs to recreate this SG (due to a name change), it creates the new one BEFORE destroying the old one. Without this, destroying first could leave EKS without a security group → downtime. Critical for stateful resources.
+
+---
+
+### EKS Cluster Resource (Lines 70–96)
+
+```hcl
+resource "aws_eks_cluster" "main" {
+  name     = "${var.project_name}-${var.environment}-eks-cluster"
+  version  = var.kubernetes_version
+  role_arn = aws_iam_role.eks_cluster.arn
+
+  vpc_config {
+    subnet_ids              = var.private_subnet_ids
+    endpoint_private_access = true
+    endpoint_public_access  = true
+    security_group_ids      = [aws_security_group.eks_cluster.id]
+  }
+
+  enabled_cluster_log_types = ["api", "audit", "authenticator"]
+
+  depends_on = [
+    aws_iam_role_policy_attachment.eks_cluster_policy,
+    aws_iam_role_policy_attachment.eks_vpc_resource_controller,
+  ]
+}
+```
+
+**`version = var.kubernetes_version`** → Kubernetes version (default: `1.29`). AWS manages the control plane upgrade path.
+
+**`endpoint_private_access = true`** → Kubernetes API server accessible from **within the VPC** (nodes, CI runners with VPC access).
+
+**`endpoint_public_access = true`** → Also accessible from the **public internet** (your laptop, GitHub Actions runners). In high-security production, you'd set this to `false` and use a VPN.
+
+**`enabled_cluster_log_types = ["api", "audit", "authenticator"]`** → Sends EKS control plane logs to CloudWatch:
+
+- `api` → API server requests
+- `audit` → Who did what to which resource (security auditing)
+- `authenticator` → IAM authentication attempts (identity troubleshooting)
+
+**`depends_on`** → Explicit dependency on the IAM policy attachments. The cluster can't be created until the IAM role has the required policies attached.
+
+---
+
+### OIDC Provider (Lines 98–115) — THE CRITICAL PIECE
+
+```hcl
+data "tls_certificate" "eks" {
+  url = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+
+resource "aws_iam_openid_connect_provider" "eks" {
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.eks.certificates[0].sha1_fingerprint]
+  url             = aws_eks_cluster.main.identity[0].oidc[0].issuer
+}
+```
+
+**`data "tls_certificate" "eks"`** → A Terraform `data` source (reads existing data, doesn't create anything). Fetches the TLS certificate of the EKS OIDC issuer URL to extract its SHA1 thumbprint.
+
+**`aws_eks_cluster.main.identity[0].oidc[0].issuer`** → The OIDC issuer URL that EKS automatically creates. Looks like: `https://oidc.eks.us-east-1.amazonaws.com/id/EXAMPLED539D4633E53DE1B716D3041E`
+
+**`aws_iam_openid_connect_provider "eks"`** → Creates an **IAM OIDC Provider** — registers the EKS cluster's OIDC issuer with AWS IAM. This is the bridge that allows IAM to trust Kubernetes identities.
+
+- **`client_id_list = ["sts.amazonaws.com"]`** → The audience. JWT tokens from this OIDC provider are intended for `sts.amazonaws.com` (AWS Security Token Service — the service that grants temporary credentials).
+- **`thumbprint_list`** → The TLS thumbprint of the OIDC endpoint. AWS uses this to verify the OIDC provider's TLS certificate. Prevents MITM attacks on the OIDC token exchange.
+
+**This resource is the prerequisite for the entire IRSA system.** Without it, the `irsa/` module's IAM trust policies can't reference the OIDC provider.
+
+---
+
+### Managed Node Group (Lines 155–192)
+
+```hcl
+resource "aws_eks_node_group" "main" {
+  cluster_name  = aws_eks_cluster.main.name
+  node_role_arn = aws_iam_role.eks_nodes.arn
+  subnet_ids    = var.private_subnet_ids
+
+  instance_types = var.node_instance_types
+  capacity_type  = "ON_DEMAND"
+
+  scaling_config {
+    desired_size = var.node_desired_size   # 2
+    min_size     = var.node_min_size       # 1
+    max_size     = var.node_max_size       # 4
+  }
+
+  update_config {
+    max_unavailable = 1   # Roll one node at a time during K8s version upgrades
+  }
+}
+```
+
+**Managed Node Group** → AWS manages the EC2 instances. When you upgrade Kubernetes version or change the AMI, AWS:
+
+1. Adds new node with new version
+2. Drains pods from old node (`kubectl drain`)
+3. Terminates old node
+4. Repeats for each node (one at a time per `max_unavailable`)
+
+vs. **Self-managed nodes** → you manage EC2 lifecycle yourself. More control, much more work.
+
+**`capacity_type = "ON_DEMAND"`** → Reliable, full-price instances. For dev savings, could use `SPOT` (up to 70% cheaper, but can be interrupted at any time — acceptable for stateless pods, risky for stateful workloads).
+
+**`scaling_config`** → The range for the node autoscaler. `desired=2` = current target. The Kubernetes **Cluster Autoscaler** (deployed inside K8s, not here) adjusts `desired` based on pod scheduling needs, within `min/max` bounds.
+
+---
+
+### EKS Add-ons (Lines 194–214)
+
+```hcl
+resource "aws_eks_addon" "coredns" { addon_name = "coredns" }
+resource "aws_eks_addon" "kube_proxy" { addon_name = "kube-proxy" }
+resource "aws_eks_addon" "vpc_cni" { addon_name = "vpc-cni" }
+```
+
+**EKS Add-ons** → AWS-managed Kubernetes components installed via the EKS API. AWS keeps these updated and compatible with the cluster version.
+
+| Add-on | What It Does |
+|---|---|
+| `coredns` | **DNS for Kubernetes.** Service discovery inside the cluster. Every `kubectl get svc` name resolves via CoreDNS. Without this, `user-service.kubeflow-ops.svc.cluster.local` doesn't resolve. |
+| `kube-proxy` | Maintains network rules on each node. Enables Service-to-Pod traffic routing. |
+| `vpc-cni` | **AWS VPC Container Network Interface.** Assigns real VPC IP addresses to pods (not an overlay network). Pods get IPs from your subnet CIDR directly. |
+
+**`depends_on = [aws_eks_node_group.main]`** → Add-ons need nodes to schedule on. Can't install add-ons before nodes exist.
+
+---
+
+### [outputs.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/vpc/outputs.tf:0:0-0:0)
+
+```hcl
+output "oidc_provider_url" {
+  value = replace(aws_eks_cluster.main.identity[0].oidc[0].issuer, "https://", "")
+}
+```
+
+The `replace()` function strips `https://` from the OIDC URL. The IRSA trust policies need the URL **without** the protocol prefix. This is a Terraform built-in string function.
+
+---
+
+## 📄 Module 3: [modules/ecr/main.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/ecr/main.tf:0:0-0:0)
+
+```hcl
+resource "aws_ecr_repository" "services" {
+  for_each = toset(var.service_names)
+
+  name                 = "${var.project_name}-${each.value}"
+  image_tag_mutability = "IMMUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
+}
+```
+
+**`for_each = toset(var.service_names)`** → Creates 3 ECR repos:
+
+- `kubeflow-ops-order-service`
+- `kubeflow-ops-user-service`
+- `kubeflow-ops-notification-service`
+
+**`image_tag_mutability = "IMMUTABLE"`** → Cannot overwrite an existing tag. If tag `abc123` already exists → pushing a different image with the same tag FAILS. This is a security best practice — if you deploy `abc123` and find a bug, you create a new commit (new SHA), not overwrite the old tag. Immutability = auditability.
+
+**`scan_on_push = true`** → Every image pushed to ECR is automatically scanned for vulnerabilities by AWS Inspector (using the same CVE databases as Trivy). Results appear in the ECR console.
+
+**`encryption_type = "AES256"`** → All images stored at rest are encrypted using AES-256. Compliance requirement for most security frameworks.
+
+```hcl
+resource "aws_ecr_lifecycle_policy" "services" {
+  for_each   = aws_ecr_repository.services
+  repository = each.value.name
+
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep only last 10 images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 10
+      }
+      action = { type = "expire" }
+    }]
+  })
+}
+```
+
+**Lifecycle Policy** → Automatically deletes old images when more than 10 exist. Without this, every CI build pushes a new image (with git SHA tag) → hundreds of images accumulate → ECR storage costs grow endlessly. 10 images × 3 repos × ~120MB = ~3.6GB maximum storage. Manageable and cheap.
+
+---
+
+## 📄 Module 4: [modules/rds/main.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/rds/main.tf:0:0-0:0) — Key Highlights
+
+---
+
+**Lines 89–115: Random Password + Secrets Manager**
+
+```hcl
+resource "random_password" "db_password" {
+  length  = 24
+  special = false
+}
+
+resource "aws_secretsmanager_secret" "db_credentials" {
+  name = "${var.project_name}/${var.environment}/db-credentials"
+}
+
+resource "aws_secretsmanager_secret_version" "db_credentials" {
+  secret_id = aws_secretsmanager_secret.db_credentials.id
+  secret_string = jsonencode({
+    username = var.db_username
+    password = random_password.db_password.result
+    host     = aws_db_instance.main.address
+    port     = 5432
+    dbname   = var.db_name
+    url      = "postgresql://${var.db_username}:${random_password.db_password.result}@${aws_db_instance.main.address}:5432/${var.db_name}"
+  })
+}
+```
+
+**`resource "random_password"`** → Generates a cryptographically secure 24-character random password during `terraform apply`. It's stored in the Terraform state (encrypted in S3) and in Secrets Manager. **You never see it in your terminal** — it's sensitive data.
+
+**`aws_secretsmanager_secret`** → Creates the secret entry in AWS Secrets Manager. Path: `kubeflow-ops/dev/db-credentials`.
+
+**`aws_secretsmanager_secret_version`** → Stores the actual secret VALUE as JSON with all DB connection details. The External Secrets Operator (Phase 8) will read this and create a Kubernetes Secret automatically.
+
+---
+
+**Lines 117–148: RDS Instance**
+
+```hcl
+resource "aws_db_instance" "main" {
+  engine         = "postgres"
+  engine_version = "16.3"
+  instance_class = var.instance_class   # db.t3.micro
+
+  allocated_storage     = 20
+  max_allocated_storage = 50   # Autoscale up to 50GB
+
+  multi_az            = false   # true in prod
+  publicly_accessible = false   # private subnets only
+  skip_final_snapshot = true    # false in prod
+
+  backup_retention_period = 7            # 7 days of automated backups
+  backup_window           = "03:00-04:00"   # UTC — low-traffic window
+  maintenance_window      = "mon:04:00-mon:05:00"
+}
+```
+
+**`max_allocated_storage = 50`** → **Storage autoscaling**. RDS automatically increases storage (in 5GB+ increments) if free space drops below 10%. No manual intervention → no "DB ran out of disk at 3 AM" incidents.
+
+**`multi_az = false`** → Prod should be `true`: RDS creates a synchronous standby replica in another AZ. If the primary fails → automatic failover to standby in ~60s. For dev, single AZ saves ~2x cost.
+
+**`skip_final_snapshot = true`** → When you run `terraform destroy`, RDS won't create a final backup. Correct for dev (you don't care about dev DB data). **In prod, ALWAYS set `false`** — RDS creates a final snapshot before deleting, protecting against accidental `terraform destroy`.
+
+**`backup_retention_period = 7`** → RDS keeps 7 days of automated backups. You can restore to any point-in-time within those 7 days. Used in the Phase 10 runbook for disaster recovery.
+
+---
+
+## 📄 Module 5: [modules/sqs/main.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/sqs/main.tf:0:0-0:0) — Key Highlights
+
+```hcl
+resource "aws_sqs_queue" "order_events" {
+  visibility_timeout_seconds = 30
+  message_retention_seconds  = 345600   # 4 days
+  receive_wait_time_seconds  = 10       # Long polling
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.order_events_dlq.arn
+    maxReceiveCount     = 3
+  })
+}
+```
+
+**`visibility_timeout_seconds = 30`** → When `notification-service` receives a message, SQS makes it **invisible** to other consumers for 30 seconds. This prevents double-processing. If the service doesn't delete the message within 30s (e.g., it crashed mid-processing), the message becomes visible again and another consumer can pick it up.
+
+**`receive_wait_time_seconds = 10`** → **Long polling**. Instead of notification-service constantly sending empty `ReceiveMessage` API calls every second (short polling = ~$0.40/million calls), it waits up to 10 seconds for a message to arrive before returning empty. Reduces API costs by ~90% and reduces CPU usage.
+
+**`redrive_policy`** → The DLQ configuration in Terraform. Same concept as the LocalStack init script in Phase 3, but now as real AWS infrastructure.
+
+---
+
+```hcl
+resource "aws_iam_policy" "sqs_access" {
+  policy = jsonencode({
+    Statement = [{
+      Action = [
+        "sqs:SendMessage",
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl",
+      ]
+      Resource = [aws_sqs_queue.order_events.arn, aws_sqs_queue.order_events_dlq.arn]
+    }]
+  })
+}
+```
+
+This IAM policy is created here (in the SQS module) and its ARN is output → referenced in the IRSA module which attaches it to the per-service IAM roles. This is how modules compose: SQS creates the policy, IRSA attaches it to the right roles.
+
+---
+
+## 📄 Module 6: [modules/irsa/main.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/irsa/main.tf:0:0-0:0) — Full Walkthrough (Most Important)
+
+> IRSA is the most important security primitive in the entire project. Read this carefully.
+
+---
+
+### The Pattern (Repeated 4 Times — Once Per Service/Component)
+
+```hcl
+resource "aws_iam_role" "order_service" {
+  assume_role_policy = jsonencode({
+    Statement = [{
+      Effect = "Allow"
+      Principal = { Federated = var.oidc_provider_arn }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "${var.oidc_provider_url}:sub" = "system:serviceaccount:${var.namespace}:order-service-sa"
+          "${var.oidc_provider_url}:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
+}
+```
+
+**`Principal = { Federated = var.oidc_provider_arn }`** → Instead of `Service: "ec2.amazonaws.com"` (like the node role), the principal is `Federated` → the EKS OIDC provider. This means: "This role can be assumed by identities vouched for by the EKS OIDC provider."
+
+**`Action = "sts:AssumeRoleWithWebIdentity"`** → The specific IAM action for OIDC-based role assumption (different from `AssumeRole` used by EC2).
+
+**The `Condition` block — This is the precision:**
+
+```hcl
+"${var.oidc_provider_url}:sub" = "system:serviceaccount:kubeflow-ops:order-service-sa"
+```
+
+- `:sub` = subject claim in the JWT token. For Kubernetes, this is always `system:serviceaccount:<namespace>:<serviceaccount-name>`
+- This condition says: **ONLY the Kubernetes ServiceAccount named `order-service-sa` in namespace `kubeflow-ops` can assume this role.**
+
+Not `user-service-sa`. Not any pod without a ServiceAccount. Not any other namespace. Only this exact ServiceAccount.
+
+```hcl
+"${var.oidc_provider_url}:aud" = "sts.amazonaws.com"
+```
+
+- `:aud` = audience claim. Must match `sts.amazonaws.com` — the intended recipient of the token.
+
+**The result:** When a pod running as `order-service-sa` (annotated with the role ARN) calls `boto3.client("sqs")`:
+
+1. The AWS SDK inside the pod detects the IRSA annotation
+2. Fetches a projected service account token from the pod's filesystem
+3. Sends it to AWS STS
+4. STS validates `:sub` and `:aud` conditions → they match
+5. Returns temporary credentials valid for 12 hours
+6. SDK uses those credentials to call SQS → no access keys anywhere
+
+---
+
+### Per-Service Policies (What Each Service Can Do)
+
+```hcl
+# order-service gets:
+"sqs:SendMessage"              # publish events
+"secretsmanager:GetSecretValue" # read DB password
+
+# user-service gets:
+"secretsmanager:GetSecretValue" # read DB password only
+
+# notification-service gets:
+"sqs:ReceiveMessage"           # consume events
+"sqs:DeleteMessage"            # acknowledge processed
+"sqs:ChangeMessageVisibility"  # extend visibility timeout if processing takes longer
+```
+
+This is **least privilege in action** at the pod level:
+
+- `order-service` **cannot** receive SQS messages (only send)
+- `notification-service` **cannot** send SQS messages (only receive)
+- `user-service` **cannot** touch SQS at all
+
+If `order-service` is compromised → attacker can only send SQS messages, can't drain the queue. This limits blast radius.
+
+---
+
+### External Secrets Role (Lines 222–269)
+
+```hcl
+resource "aws_iam_role" "external_secrets" {
+  # Only external-secrets ServiceAccount can assume this
+  "${var.oidc_provider_url}:sub" = "system:serviceaccount:external-secrets:external-secrets"
+}
+
+resource "aws_iam_role_policy" "external_secrets" {
+  policy = jsonencode({
+    Statement = [{
+      Sid    = "SecretsManagerReadAll"
+      Action = ["secretsmanager:GetSecretValue", "DescribeSecret", "ListSecrets"]
+      Resource = "arn:aws:secretsmanager:*:*:secret:${var.project_name}/*"
+    }]
+  })
+}
+```
+
+**External Secrets Operator (ESO)** (covered in Phase 8) needs to read all secrets for this project from AWS Secrets Manager. The resource ARN pattern `secret:kubeflow-ops/*` means: read any secret whose path starts with `kubeflow-ops/`. Only ESO's specific ServiceAccount can assume this role.
+
+---
+
+## 📄 Module 7: [modules/sns/main.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/sns/main.tf:0:0-0:0) — Key Highlights
+
+```hcl
+resource "aws_sns_topic" "critical_alerts" {
+  name = "${var.project_name}-${var.environment}-critical-alerts"
+}
+resource "aws_sns_topic" "warning_alerts" { ... }
+
+resource "aws_sns_topic_subscription" "critical_email" {
+  count    = var.alert_email != "" ? 1 : 0
+  protocol = "email"
+  endpoint = var.alert_email
+}
+```
+
+**`count = var.alert_email != "" ? 1 : 0`** → **Conditional resource** (Terraform ternary). If `alert_email` is set → create 1 subscription. If empty → create 0 (skip). This is how you make optional resources in Terraform.
+
+**`protocol = "email"`** → SQS supports many subscription protocols: `email`, `https`, `sqs`, `lambda`, `sms`. Email sends an alert email; `https` can call PagerDuty/Opsgenie webhooks.
+
+**SNS Topic Policy** (Lines 73–105) → Grants CloudWatch the permission to publish alerts to the SNS topic. Without this, when a CloudWatch alarm fires it can't send to SNS → alerts are never delivered.
+
+---
+
+## 📄 Module 8: [modules/cloudwatch/main.tf](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/terraform/modules/cloudwatch/main.tf:0:0-0:0) — Key Highlights
+
+---
+
+### Dashboard (Lines 59–140)
+
+```hcl
+resource "aws_cloudwatch_dashboard" "main" {
+  dashboard_name = "${var.project_name}-${var.environment}-overview"
+  dashboard_body = jsonencode({
+    widgets = [
+      # RDS CPU & Connections widget
+      # RDS Storage widget
+      # SQS message count widget
+      # Redis CPU & Memory widget
+    ]
+  })
+}
+```
+
+Creates a **CloudWatch Dashboard** — a web-based monitoring panel in the AWS console. The dashboard is defined as JSON (the `dashboard_body`). Each widget has:
+
+- `type = "metric"` → a time-series graph
+- `x, y, width, height` → position and size on the dashboard grid
+- `metrics` → which AWS metrics to show (format: `[namespace, metric_name, dimension_name, dimension_value]`)
+- `period = 300` → aggregate data every 5 minutes
+- `stat = "Average"` → show the average value per period
+
+This is the **AWS-native monitoring** layer. Note the comment in the file: _"Prometheus handles K8s-level metrics; CloudWatch handles AWS-managed service metrics."_ They complement each other:
+
+- **CloudWatch** → RDS CPU, Redis memory, SQS depth (AWS-managed services)
+- **Prometheus** (Phase 9) → pod CPU/memory, HTTP request rates, error rates (application-level)
+
+---
+
+### Alarms (Lines 142–269)
+
+**Pattern (same for all alarms):**
+
+```hcl
+resource "aws_cloudwatch_metric_alarm" "rds_cpu_high" {
+  count = var.rds_instance_id != "" ? 1 : 0  # conditional
+
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 3          # Must breach for 3 consecutive periods
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/RDS"
+  period              = 300        # 5-minute aggregation
+  statistic           = "Average"
+  threshold           = 80         # 80% CPU
+
+  alarm_actions = [var.sns_critical_topic_arn]  # page on-call when triggered
+  ok_actions    = [var.sns_warning_topic_arn]   # notify when recovers
+}
+```
+
+**`evaluation_periods = 3`** → Must breach the threshold for 3 consecutive 5-minute periods (15 minutes total) before alarming. Prevents false alarms from brief CPU spikes.
+
+**`alarm_actions`** → What to do when the alarm fires → publish to SNS critical topic → email/PagerDuty.
+
+**`ok_actions`** → What to do when the alarm recovers → publish to SNS warning topic → notification that the incident is resolved.
+
+### The Alarms Created
+
+| Alarm | Threshold | Severity | Why |
+|---|---|---|---|
+| `rds_cpu_high` | CPU > 80% for 15min | Critical | DB under heavy load → slowdowns cascading to all services |
+| `rds_storage_low` | Free storage < 5GB | Critical | DB will stop accepting writes when disk full |
+| `sqs_dlq_messages` | DLQ > 0 messages | Critical | Any DLQ message = notification failure 3 times = bug in notification-service |
+| `sqs_queue_backlog` | Visible > 1000 messages | Warning | Consumer (notification-service) may be down |
+| `redis_cpu_high` | CPU > 70% for 15min | Warning | Cache performance degrading |
+
+**The `5368709120` threshold for `rds_storage_low`** = `5GB × 1024³ = 5,368,709,120 bytes`. CloudWatch's `FreeStorageSpace` metric reports in bytes.
+
+---
+
+## 🔑 Key DevOps Takeaways from Phase 5
+
+| Pattern | What You Applied |
+|---|---|
+| **Remote S3 state + DynamoDB locking** | Team-safe Terraform — no conflicts, no lost state |
+| **Module pattern** | Reusable, testable infrastructure blocks. Add `prod/` environment by calling same modules with bigger values |
+| **`default_tags`** | Every resource auto-tagged → cost visibility, compliance, searchability |
+| **VPC with public/private subnets** | EKS nodes have no public IPs — true network isolation |
+| **Single NAT Gateway (dev), Multi-AZ (prod)** | Cost-aware design with explicit prod upgrade path |
+| **Kubernetes subnet tags** | Load Balancer Controller can automatically find where to deploy ALBs |
+| **Managed Node Group** | AWS handles node upgrades, drain, replace — you just pin Kubernetes version |
+| **OIDC Provider on EKS** | Foundation for IRSA — pods get AWS credentials without EC2 IAM roles |
+| **IRSA per service** | `order-service` can only SendMessage, not ReceiveMessage — minimum viable permissions |
+| **Random password + Secrets Manager** | DB credentials never in Git, never in your terminal, auto-synced to K8s via ESO |
+| **ECR lifecycle policy** | Automatic cleanup → bounded storage costs |
+| **Immutable ECR tags** | No accidental overwrites of production image |
+| **CloudWatch alarms → SNS → Email/PagerDuty** | AWS-layer monitoring, fully automated in code |
+| **DLQ alarm threshold = 0** | Any message in DLQ is immediately critical — zero tolerance |
+
+---
+
+## ✅ What Happens When You Run It
+
+```bash
+# 1. Bootstrap (ONCE, manually)
+aws s3 mb s3://kubeflow-ops-terraform-state --region us-east-1
+aws dynamodb create-table --table-name kubeflow-ops-terraform-lock ...
+
+# 2. Initialize
+cd terraform/environments/dev
+terraform init        # downloads providers, connects to S3 backend
+
+# 3. Preview (~immediate)
+terraform plan        # shows: X to add, 0 to change, 0 to destroy
+
+# 4. Apply (~15-20 minutes)
+terraform apply       # creates VPC → EKS → RDS → ElastiCache → SQS → SNS → CloudWatch → IRSA
+
+# 5. After apply — use the outputs
+terraform output configure_kubectl
+# → aws eks update-kubeconfig --region us-east-1 --name kubeflow-ops-dev-eks-cluster
+# Run that command → kubectl is now connected to your cluster
+
+terraform output irsa_order_service_role_arn
+# → arn:aws:iam::123456789012:role/kubeflow-ops-dev-order-service-role
+# → goes into the Kubernetes ServiceAccount annotation in Phase 6
+```
+
+---
+
+## ✅ Phase 5 Complete — What's Next
+
+You now have **all AWS infrastructure provisioned**:
+
+- ✅ VPC with public/private subnets across 2 AZs
+- ✅ EKS cluster with managed node group + OIDC provider
+- ✅ ECR repositories per service (with Trivy scanning + lifecycle policies)
+- ✅ RDS PostgreSQL (private, encrypted, backed up, credentials in Secrets Manager)
+- ✅ ElastiCache Redis (private, EKS-only access)
+- ✅ SQS + DLQ (with long polling, 14-day DLQ retention)
+- ✅ SNS alert topics
+- ✅ CloudWatch dashboard + alarms for all AWS services
+- ✅ IRSA IAM roles (per-service, per-component — least privilege for every pod)
+
+**Phase 6: Helm Charts + GitOps Manifests** — Now that your cluster exists, you define what runs ON it using Helm templates and values files. ArgoCD will read those and deploy your 3 microservices to EKS. 🚀
