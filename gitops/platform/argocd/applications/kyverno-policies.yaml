@@ -1,0 +1,35 @@
+# =============================================================================
+# ArgoCD Application — Kyverno Policies
+# =============================================================================
+# Deploys the Kyverno ClusterPolicies that enforce security guardrails:
+#   - Disallow latest image tag
+#   - Require resource limits on all containers
+#   - Require app + team labels on Deployments
+#   - Block privileged containers
+# NOTE: kyverno.yaml (the operator) must be synced BEFORE this application.
+# =============================================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kyverno-policies
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: kubeflow-ops
+    type: security
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/kubeflow-ops.git
+    targetRevision: main
+    path: gitops/platform/kyverno          # ← points to the policies.yaml folder
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno                     # ClusterPolicies are cluster-scoped but namespace is required
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
