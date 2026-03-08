@@ -3377,3 +3377,1609 @@ After Phase 8, your cluster now has:
 - ✅ You can't deploy without resource limits — every pod is bounded
 
 **Phase 9: Observability** — Now you need to SEE what's happening. Phase 9 covers the `alert-rules.yaml` file that defines Prometheus alerting rules — when CPU is too high, when a pod is crash-looping, when disk space is low — and how Alertmanager routes those alerts to Slack. 📊
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+*Edited relevant file*
+
+### User Input
+
+Okay lets start from Phase 9.
+You need to explain each thing line by line for devops prespective, Block by block, I only know basic docker terraform and kubernets basic
+So any new topic u need to explain in detail as if beginner.If something is developer work no in depth required, NO seperate Artifact, , share it here in this window
+
+### Planner Response
+
+Let me read all the Phase 9 files first.
+
+*Listed directory [prometheus](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/gitops/platform/prometheus) *
+
+*Listed directory [docs](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/docs) *
+
+*Viewed [alert-rules.yaml](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/gitops/platform/prometheus/alert-rules.yaml) *
+
+### Planner Response
+
+I have the file. Here is the complete Phase 9 explanation:
+
+---
+
+# 📊 Phase 9 — Observability Stack — Complete Deep-Dive
+
+---
+
+## 🧠 Big Picture First — What Problem Does Phase 9 Solve?
+
+At the end of Phase 8, everything is secure and running. But **you are flying blind.**
+
+You don't know:
+- Is the order-service slow right now?
+- Are there errors spiking?
+- Is a pod crash-looping at 3am while you're asleep?
+- Is one EC2 node about to run out of disk?
+- Is the HPA maxed out and unable to scale further?
+
+**Without observability, you find out about problems via angry user reports. That's the worst way to find out.**
+
+Phase 9 builds your **eyes and ears** inside the cluster:
+
+```
+               ┌─────────────────────────────────────────┐
+               │         Observability Stack             │
+               │                                         │
+               │  Prometheus  ──── scrapes every pod     │
+               │      │             every 15 seconds     │
+               │      │                                  │
+               │      ▼                                  │
+               │  Alert Rules ── (YOU define these)      │
+               │      │         "if X > threshold"       │
+               │      │                                  │
+               │      ▼                                  │
+               │  Alertmanager ── routes to Slack/SNS    │
+               │                                         │
+               │  Grafana ──── dashboards & visualization│
+               └─────────────────────────────────────────┘
+```
+
+**Phase 9's one deliverable:** The [alert-rules.yaml](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/gitops/platform/prometheus/alert-rules.yaml:0:0-0:0) file — **YOU define the rules**. Everything else (Prometheus, Grafana, Alertmanager) was already deployed by ArgoCD in Phase 7 via the `prometheus-stack` application.
+
+---
+
+## 🆕 NEW CONCEPT: The Prometheus Monitoring Data Model
+
+Before reading the alert rules, you MUST understand how Prometheus stores and thinks about data. Without this, the `expr:` fields will look like magic.
+
+### Metrics — The Basic Unit
+
+Prometheus stores data as **time-series** — values that change over time. Each time-series is uniquely identified by a **metric name** and **labels** (key-value pairs).
+
+```
+metric_name{label1="value1", label2="value2"} = numeric_value  @ timestamp
+```
+
+**Real examples from this project:**
+```
+http_requests_total{status="200", method="GET", path="/healthz", service="order-service"} = 4231
+http_requests_total{status="500", method="POST", path="/orders", service="order-service"} = 17
+http_request_duration_seconds_bucket{le="0.1", service="order-service"} = 3891
+kube_pod_container_status_restarts_total{pod="order-service-abc", namespace="kubeflow-ops"} = 0
+```
+
+**Labels are everything.** The same metric name `http_requests_total` has thousands of different time-series — one per unique combination of labels. You filter using `{label="value"}` syntax.
+
+### Metric Types
+
+| Type | What it measures | Example |
+|---|---|---|
+| **Counter** | Cumulative count that only ever increases | `http_requests_total` — total HTTP requests since pod start |
+| **Gauge** | Current value that can go up or down | `memory_usage_bytes` — current RAM used |
+| **Histogram** | Distribution of values in buckets | `http_request_duration_seconds_bucket` — how many requests in each latency bucket |
+
+---
+
+## 🆕 NEW CONCEPT: PromQL — Prometheus Query Language
+
+Alert rules are written in **PromQL** — a query language designed specifically for time-series data.
+
+### Key PromQL Functions You'll See:
+
+**`rate(metric[5m])`** — per-second rate of increase averaged over the last 5 minutes
+```
+rate(http_requests_total[5m])
+→ "How many new HTTP requests per second, on average, in the last 5 minutes?"
+```
+Why `rate` instead of raw value? Raw counters only ever increase. `rate` converts them to a per-second speed — which is meaningful for comparisons and thresholds.
+
+**`sum(metric) by (label)`** — aggregate across multiple time-series, grouping by a label
+```
+sum(rate(http_requests_total[5m])) by (service)
+→ "Total requests/sec grouped by service name"
+→ {service="order-service"} = 45.2
+→ {service="user-service"} = 12.8
+```
+
+**`histogram_quantile(0.95, ...)`** — calculate the 95th percentile from histogram buckets
+```
+histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))
+→ "What latency is 95% of all requests FASTER than?"
+→ If p95 = 1.5s → 95% of requests finish in under 1.5 seconds
+```
+
+**`increase(metric[15m])`** — total increase over a time window (like `rate` but gives total count, not per-second)
+```
+increase(http_requests_total{status="201"}[15m])
+→ "How many 201 responses happened in the last 15 minutes?"
+```
+
+**`offset 10m`** — look at the value 10 minutes ago
+```
+kube_pod_container_status_restarts_total - kube_pod_container_status_restarts_total offset 10m
+→ "How much did restart count increase in the last 10 minutes?"
+```
+
+---
+
+## 📄 FILE: [gitops/platform/prometheus/alert-rules.yaml](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/gitops/platform/prometheus/alert-rules.yaml:0:0-0:0)
+
+```yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+```
+
+### 🆕 NEW CONCEPT: `kind: PrometheusRule` — Another CRD
+
+Like `kind: Application` (ArgoCD) and `kind: ClusterPolicy` (Kyverno), **`PrometheusRule`** is a CRD installed by the `kube-prometheus-stack` chart in Phase 7.
+
+**Why a CRD instead of just a config file?**
+Prometheus is running INSIDE the cluster. The traditional approach was to edit Prometheus' config file and restart it. With `PrometheusRule`, you instead create/update a Kubernetes resource → Prometheus' **operator** (a controller pod) detects the change → automatically hot-reloads Prometheus' config. **No restarts, no downtime, GitOps-friendly.**
+
+**`apiVersion: monitoring.coreos.com/v1`** → The Prometheus Operator's API group. When kube-prometheus-stack is installed, it registers this API group with Kubernetes.
+
+---
+
+```yaml
+metadata:
+  name: kubeflow-ops-alerts
+  namespace: observability     # Same namespace as Prometheus
+  labels:
+    release: prometheus-stack  # ← CRITICAL label
+```
+
+**`namespace: observability`** → This resource must be in the same namespace as Prometheus. Prometheus' operator watches for `PrometheusRule` objects and loads their rules.
+
+**`labels: release: prometheus-stack`** → 🔑 **This is the magic selector.**
+
+In Phase 7's `prometheus-stack.yaml`, we set:
+```yaml
+# (from prometheus-stack Helm chart defaults)
+prometheusSpec:
+  ruleSelector:
+    matchLabels:
+      release: prometheus-stack
+```
+
+This means Prometheus only loads `PrometheusRule` objects that have **`release: prometheus-stack`** label. Without this label, you can create a PrometheusRule and Prometheus will silently ignore it. **This is the most common gotcha with PrometheusRule.**
+
+---
+
+```yaml
+spec:
+  groups:
+    - name: application.rules
+      rules: ...
+    - name: business.rules
+      rules: ...
+    - name: kubernetes.rules
+      rules: ...
+    - name: capacity.rules
+      rules: ...
+```
+
+**`groups:`** → Rules are organized into **groups** — a logical grouping that also controls evaluation timing. All rules in a group are evaluated together at the same time. Groups are just for organization.
+
+**`name: application.rules`** → Human-readable group names. These appear in Prometheus UI and Alertmanager.
+
+---
+
+## 📄 GROUP 1 — `application.rules` — Service-Level Alerts
+
+### ALERT 1: `HighErrorRate`
+
+```yaml
+- alert: HighErrorRate
+  expr: |
+    sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+    /
+    sum(rate(http_requests_total[5m])) by (service)
+    > 0.05
+  for: 5m
+  labels:
+    severity: critical
+  annotations:
+    summary: "High error rate on {{ $labels.service }}"
+    description: "{{ $labels.service }} has >5% error rate (current: {{ $value | humanizePercentage }})"
+```
+
+**`alert: HighErrorRate`** → The name of this alert. This appears in Alertmanager, Slack messages, and Grafana. Use clear, specific names.
+
+**`expr: |`** → The PromQL expression that triggers the alert when it evaluates to `true` (i.e., returns any result). Let's break this down line by line:
+
+```promql
+sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+```
+→ **Numerator (top):** Total 5xx errors per second, grouped by service
+- `http_requests_total` — all HTTP requests counter
+- `{status=~"5.."}` — filter: only where status matches regex `5..` (500, 502, 503, 504, etc.)
+- `[5m]` — look at the last 5 minutes of data
+- `rate(...)` — convert to per-second rate
+- `sum(...) by (service)` — add up all pods for the same service (order-service might have 3 pods — sum them all)
+
+```promql
+/
+sum(rate(http_requests_total[5m])) by (service)
+```
+→ **Denominator (bottom):** Total ALL requests per second, grouped by service (no status filter)
+
+```promql
+> 0.05
+```
+→ **Threshold:** If the ratio (5xx errors / all requests) **exceeds 5% (0.05)** → alert fires
+
+**The full math:** `5xx_rate / total_rate > 0.05` = "error rate is above 5%"
+
+**`for: 5m`** → 🔑 **The pending duration.** The expression must be TRUE for 5 minutes continuously before the alert fires. Without `for:`, a 1-second spike would fire an alert. With `for: 5m`, you need sustained errors for 5 minutes — eliminates false alarms from brief blips.
+
+**`labels.severity: critical`** → Labels on the alert itself. Alertmanager uses these to **route** the alert. You can configure: `severity: critical` → page the on-call engineer via PagerDuty. `severity: warning` → send to Slack only during business hours.
+
+**`annotations:`** → Human-readable information that appears in the alert notification.
+
+**`{{ $labels.service }}`** → **Go template syntax.** At alert fire time, Prometheus fills in the actual value. `$labels` = the Prometheus labels on the metric that triggered the alert (e.g. `service="order-service"`).
+
+**`{{ $value | humanizePercentage }}`** → `$value` = the actual numeric value of the expression (e.g. `0.127` = 12.7%). `| humanizePercentage` = Prometheus template filter that converts `0.127` → `"12.7%"` for human readability.
+
+**What this alert looks like when it fires:**
+```
+Alert: HighErrorRate [FIRING]
+Severity: critical
+Summary: "High error rate on order-service"
+Description: "order-service has >5% error rate (current: 8.3%)"
+```
+
+---
+
+### ALERT 2: `HighLatency`
+
+```yaml
+- alert: HighLatency
+  expr: |
+    histogram_quantile(0.95,
+      sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)
+    ) > 2
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "High latency on {{ $labels.service }}"
+    description: "P95 latency is {{ $value }}s on {{ $labels.service }}"
+```
+
+**The expression breakdown:**
+
+```promql
+http_request_duration_seconds_bucket
+```
+→ A **histogram metric** automatically created by `prometheus-fastapi-instrumentator`. It counts how many requests fall into each latency "bucket."
+
+The buckets look like:
+```
+duration_bucket{le="0.05"}  = 8450   ← 8450 requests completed in ≤ 50ms
+duration_bucket{le="0.1"}   = 9100   ← 9100 requests completed in ≤ 100ms
+duration_bucket{le="0.25"}  = 9800   ← 9800 requests completed in ≤ 250ms
+duration_bucket{le="0.5"}   = 9950   ← ...
+duration_bucket{le="1.0"}   = 9980
+duration_bucket{le="2.0"}   = 9995
+duration_bucket{le="+Inf"}  = 10000  ← total: 10000 requests
+```
+
+**`histogram_quantile(0.95, ...)`** → Calculates the 95th percentile (p95) from these buckets.
+
+**`sum(...) by (le, service)`** → Must include `le` (bucket boundary) in the grouping — that's how histogram_quantile knows about the bucket structure. `service` gives you per-service percentiles.
+
+**`> 2`** → Alert if p95 latency exceeds **2 seconds**.
+
+**`severity: warning`** (not critical) → High latency is bad but not as immediately catastrophic as errors. Different routing: maybe Slack notification during business hours, not a 3am page.
+
+### 🆕 NEW CONCEPT: P95 Latency — Why Not Average?
+
+**Average hides problems.** If 95% of requests are fast (10ms) but 5% are slow (30 seconds), the average might be 1 second — which looks fine. But 5% of users are having terrible experiences.
+
+**P95 (95th percentile)** = "The latency that 95% of requests are FASTER than." So p95 = 2s means: 5% of your users wait MORE than 2 seconds. This is the SLO-aligned way to measure latency.
+
+---
+
+### ALERT 3: `ServiceDown`
+
+```yaml
+- alert: ServiceDown
+  expr: |
+    up{job=~"order-service|user-service|notification-service"} == 0
+  for: 2m
+  labels:
+    severity: critical
+  annotations:
+    summary: "{{ $labels.job }} is DOWN"
+    description: "{{ $labels.job }} has been unreachable for 2+ minutes. Check pod status."
+```
+
+**`up`** → 🆕 A **special built-in Prometheus metric**. Every time Prometheus scrapes a target, it creates a metric called `up`:
+- `up = 1` → Prometheus reached the target and scraped it successfully
+- `up = 0` → Prometheus tried to scrape the target and FAILED (pod is down, not responding, wrong port)
+
+**`{job=~"order-service|user-service|notification-service"}`** → Filter to only your 3 services. `=~` is regex match. `|` means "or". Without this filter, the alert would fire for ANY service going down (including Prometheus itself, node-exporter, etc.).
+
+**`== 0`** → Alert when `up = 0` (service unreachable).
+
+**`for: 2m`** → Only 2 minutes (shorter than other alerts). If a service is truly down, 2 minutes of confirmation is enough. You don't want to wait 5 minutes when a service is completely offline.
+
+**`{{ $labels.job }}`** → `job` is an auto-assigned label from Prometheus' scrape config — it's the name of the monitored service.
+
+---
+
+## 📄 GROUP 2 — `business.rules` — Business Logic Alerts
+
+**Why business alerts?** Technical alerts (errors, latency) tell you something is broken. Business alerts tell you whether your **business is working** — even if all the services are technically up and responding.
+
+### ALERT 4: `OrderCreationFailures`
+
+```yaml
+- alert: OrderCreationFailures
+  expr: |
+    sum(rate(http_requests_total{service="order-service",method="POST",path="/orders",status=~"5.."}[5m]))
+    /
+    sum(rate(http_requests_total{service="order-service",method="POST",path="/orders"}[5m]))
+    > 0.1
+  for: 3m
+  labels:
+    severity: critical
+    team: platform
+  annotations:
+    summary: "Order creation failure rate > 10%"
+    description: "{{ $value | humanizePercentage }} of order creation requests are failing"
+    runbook: "docs/runbook.md#high-error-rate"
+```
+
+**More specific than `HighErrorRate`** — this targets ONLY:
+- `service="order-service"` → only order-service
+- `method="POST"` → only POST requests
+- `path="/orders"` → only the order creation endpoint
+
+The general `HighErrorRate` alert covers all services and endpoints. `OrderCreationFailures` is a **business-specific** drill-down: "specifically, are orders being created successfully?"
+
+**`> 0.1`** → Fire if MORE than 10% of order creation requests fail. (5% for general errors, 10% for this — because some sporadic 5xx is expected; 10% is clearly a systemic problem for this critical path).
+
+**`labels.team: platform`** → Used by Alertmanager to route this alert to the **platform team** specifically. Multiple teams can use the same cluster; labels route alerts to the right team's Slack channel.
+
+**`annotations.runbook: "docs/runbook.md#high-error-rate"`** → 🔑 Links to your **operational runbook** (Phase 10 document). When this alert fires at 3am, the engineer who gets paged sees the link and immediately knows what steps to follow. This is real-world on-call engineering.
+
+---
+
+### ALERT 5: `NoOrdersReceived`
+
+```yaml
+- alert: NoOrdersReceived
+  expr: |
+    sum(increase(http_requests_total{service="order-service",method="POST",path="/orders",status="201"}[15m])) == 0
+  for: 15m
+  labels:
+    severity: warning
+  annotations:
+    summary: "No orders received in 15 minutes"
+    description: "Zero successful order creations in the last 15 minutes. Check if service is reachable."
+```
+
+**`increase(...[15m]) == 0`** → The total count of successful order creations (status `201 Created`) in the last 15 minutes equals ZERO.
+
+This is a **business health alert** — technically, every service might be returning 200 OK for health checks. But if no orders are being successfully created, something is wrong upstream (maybe the load balancer is misconfigured, the ingress is broken, the app is stuck in a non-HTTP loop).
+
+**The clever design:** This is NOT about errors — it's about absence of success. Even with 0 errors, if you're seeing 0 orders, that's suspicious. A dead service that isn't connected to traffic won't emit errors; it'll just emit nothing.
+
+**`status="201"`** → HTTP 201 Created. Only count SUCCESSFUL order creations.
+
+**`severity: warning`** (not critical) → Could be middle-of-night with legitimately no traffic, or a real problem. Warrants investigation, not immediate paging.
+
+---
+
+### ALERT 6: `UserServiceLookupFailures`
+
+```yaml
+- alert: UserServiceLookupFailures
+  expr: |
+    sum(rate(http_requests_total{service="order-service",method="GET",path=~"/users/.*",status=~"5.."}[5m]))
+    /
+    sum(rate(http_requests_total{service="order-service",method="GET",path=~"/users/.*"}[5m]))
+    > 0.05
+  for: 5m
+  labels:
+    severity: critical
+  annotations:
+    summary: "User validation failing (impacts order creation)"
+    description: "order-service cannot validate users — {{ $value | humanizePercentage }} lookup failure rate"
+```
+
+**`path=~"/users/.*"`** → Regex match. `/users/.*` matches `/users/123`, `/users/456`, any user lookup. This is order-service calling user-service to validate users before creating orders.
+
+**Why this is `critical` even though it's "just" user lookups:** If `user-service` is failing, `order-service` **cannot create orders** (it validates the user first). So this upstream dependency failure immediately blocks the core business function.
+
+**`path=~` regex in labels:** The `=~` operator allows regex patterns in label filters. `.*` = zero or more of any character. This one filter matches all user ID lookup URLs.
+
+---
+
+### ALERT 7: `NotificationProcessingLag`
+
+```yaml
+- alert: NotificationProcessingLag
+  expr: |
+    sum(increase(http_requests_total{service="notification-service",path="/process",status="200"}[5m])) == 0
+    and
+    sum(increase(http_requests_total{service="order-service",method="POST",path="/orders",status="201"}[5m])) > 0
+  for: 10m
+  labels:
+    severity: warning
+  annotations:
+    summary: "Notifications not being processed"
+    description: "Orders are being created but notification-service is not processing them. Check SQS consumer."
+```
+
+### 🆕 NEW CONCEPT: Multi-Condition Alerts with `and`
+
+PromQL supports **logical operators** between expressions:
+- `and` → both sides must be true
+- `or` → either side is true
+- `unless` → left side true but right side false
+
+**This alert logic (careful reading):**
+```
+Condition A: notification-service processed ZERO messages in last 5 minutes
+AND
+Condition B: order-service had SUCCESSFUL order creations in last 5 minutes
+```
+
+**Why both conditions?** Without Condition B, the alert would fire at night when there's no traffic — of course `notification-service` processes zero messages if zero orders are arriving. That would be a false alarm.
+
+With `and`: "notifications are NOT being processed (A) BUT orders ARE being created (B)" = **orders are going into SQS but notification-service isn't consuming them.** That's a real problem — the SQS consumer is broken.
+
+This is sophisticated business-logic alerting that requires understanding how your services talk to each other.
+
+---
+
+## 📄 GROUP 3 — `kubernetes.rules` — Cluster Health Alerts
+
+### ALERT 8: `PodCrashLoopBackOff`
+
+```yaml
+- alert: PodCrashLoopBackOff
+  expr: |
+    kube_pod_container_status_restarts_total
+    - kube_pod_container_status_restarts_total offset 10m > 3
+  for: 5m
+  labels:
+    severity: critical
+  annotations:
+    summary: "Pod {{ $labels.pod }} is crash-looping"
+    description: "Pod {{ $labels.pod }} in {{ $labels.namespace }} has restarted >3 times in 10 minutes"
+```
+
+**`kube_pod_container_status_restarts_total`** → A metric from **kube-state-metrics** (part of kube-prometheus-stack, installed in Phase 7). It tracks the total restart count of every container in every pod.
+
+**`- kube_pod_container_status_restarts_total offset 10m`** → Subtracts the restart count from 10 minutes ago. The result = **how many times this container restarted in the last 10 minutes**.
+
+**`> 3`** → Alert if restarts in the last 10 minutes exceed 3.
+
+**Why not use Kubernetes' own CrashLoopBackOff event?** Because Kubernetes fires events but they get deleted after 1 hour. Prometheus keeps this metric over time and you can track the history. Also, Prometheus can aggregate this across ALL pods in a rolling window — much more precise than event-based detection.
+
+**`{{ $labels.pod }}` and `{{ $labels.namespace }}`** → kube-state-metrics automatically adds these labels from Kubernetes metadata. You know exactly which pod in which namespace is crashing.
+
+---
+
+### ALERT 9: `PodNotReady`
+
+```yaml
+- alert: PodNotReady
+  expr: |
+    kube_pod_status_ready{condition="true"} == 0
+  for: 5m
+  labels:
+    severity: warning
+```
+
+**`kube_pod_status_ready`** → Another kube-state-metrics metric. `condition="true"` + value `== 0` means: "the pod's ready condition is false" — i.e., the **Readiness probe is failing**.
+
+Remember from Phase 6: when a readiness probe fails, the pod stays out of the Service — no traffic goes to it. If this persists for 5 minutes, something is wrong (dependency check failing, DB unreachable, etc.).
+
+**`severity: warning`** — Pod not ready doesn't mean it's down; it might be starting up or temporarily overloaded. 5 minutes of not-ready is worth investigating.
+
+---
+
+### ALERT 10: `NodeDiskPressure`
+
+```yaml
+- alert: NodeDiskPressure
+  expr: |
+    kube_node_status_condition{condition="DiskPressure",status="true"} == 1
+  for: 2m
+```
+
+**`kube_node_status_condition`** → kube-state-metrics tracks Kubernetes Node conditions. A Node can have conditions like `DiskPressure`, `MemoryPressure`, `PIDPressure`, `Ready`.
+
+**`condition="DiskPressure", status="true"`** → Kubernetes itself sets DiskPressure when the node's disk drops below a threshold (~10% free by default, configurable). This is Kubernetes' own detection — you're just alerting on it.
+
+**`for: 2m`** → Short pending duration. Disk pressure can cause pod evictions within minutes — this needs fast response.
+
+**`severity: critical`** → Why critical? When a node has DiskPressure, Kubernetes starts **evicting pods** from that node to free space. Pod evictions during production traffic = dropped requests.
+
+---
+
+### ALERT 11: `HighNodeCPU`
+
+```yaml
+- alert: HighNodeCPU
+  expr: |
+    100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+  for: 10m
+```
+
+**`node_cpu_seconds_total`** → From **node-exporter** (also part of kube-prometheus-stack). Reports how many seconds the CPU spent in each mode: `idle`, `user`, `system`, `iowait`, etc.
+
+**`{mode="idle"}`** → Filter to only the idle time.
+
+**`rate(node_cpu_seconds_total{mode="idle"}[5m])`** → Rate of idle seconds per second = fraction of time the CPU was idle (number between 0 and 1).
+
+**`* 100`** → Convert to percentage (0-100).
+
+**`100 - (...)`** → CPU usage % = `100% - idle%`. If CPU was idle 15% of the time → CPU was USED 85% of the time.
+
+**`avg by(instance)`** → Average across all CPU cores on the same node (`instance` = the EC2 node's IP).
+
+**`> 85`** → Alert if CPU usage on any node exceeds 85% for 10 minutes.
+
+**`for: 10m`** → CPU spikes are normal (a deployment pushes CPU temporarily). 10 minutes of sustained >85% is a real problem.
+
+**`severity: warning`** → At 85% CPU, the node is struggling but not failed. Time to investigate/scale. If it hits 100%, the `HighErrorRate` alert will catch the consequences.
+
+---
+
+## 📄 GROUP 4 — `capacity.rules` — Scaling & Capacity Alerts
+
+### ALERT 12: `HPAMaxedOut`
+
+```yaml
+- alert: HPAMaxedOut
+  expr: |
+    kube_horizontalpodautoscaler_status_current_replicas
+    == kube_horizontalpodautoscaler_spec_max_replicas
+  for: 15m
+  labels:
+    severity: warning
+  annotations:
+    summary: "HPA {{ $labels.horizontalpodautoscaler }} is at max replicas"
+    description: "{{ $labels.horizontalpodautoscaler }} has been at max capacity for 15+ minutes. Consider increasing maxReplicas."
+```
+
+**`kube_horizontalpodautoscaler_status_current_replicas`** → Current number of pods the HPA is running.
+
+**`kube_horizontalpodautoscaler_spec_max_replicas`** → Max replicas configured in the HPA (e.g., `10` from Phase 6's `values.yaml`).
+
+**`==`** → When current == max → HPA has scaled to the maximum and **cannot scale further**. Traffic is growing but Kubernetes can't add more pods.
+
+**`for: 15m`** → 15 minutes at max replicas. A brief spike to max is fine (HPA handles it). 15 minutes means the load consistently exceeds capacity.
+
+**Why this alert is important:** Without it, you'd only notice when errors start (which is too late). This gives you a **lead indicator** — "you're about to run out of capacity" — before things actually break.
+
+**The action:** Operator increases `maxReplicas` in `values.yaml`, pushes to Git, ArgoCD syncs, HPA gets a higher ceiling.
+
+**`{{ $labels.horizontalpodautoscaler }}`** → The name of the HPA — `order-service`, `user-service`, or `notification-service`.
+
+---
+
+### ALERT 13: `TrafficSpike`
+
+```yaml
+- alert: TrafficSpike
+  expr: |
+    sum(rate(http_requests_total[5m])) by (service)
+    > 2 * sum(rate(http_requests_total[1h])) by (service)
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "Traffic spike on {{ $labels.service }}"
+    description: "{{ $labels.service }} traffic is 2x above the 1-hour average. HPA should be scaling."
+```
+
+**Elegant PromQL design.** This compares two time windows:
+- `rate(...[5m])` → current traffic (last 5 minutes)
+- `rate(...[1h])` → baseline traffic (last 1 hour average)
+
+**`> 2 * ...`** → Current traffic is MORE THAN 2x the 1-hour average.
+
+**Why this matters:** HPA will be auto-scaling in response. But this alert gives the team **visibility** — "something unusual is driving traffic." Could be:
+- Marketing campaign launched → expected spike
+- DDoS attack → investigate
+- Viral event → scale proactively
+- Bug causing retry loops → investigate
+
+**`for: 5m`** → Confirm it's sustained, not a brief burst.
+
+---
+
+### ALERT 14: `PVCNearlyFull`
+
+```yaml
+- alert: PVCNearlyFull
+  expr: |
+    kubelet_volume_stats_used_bytes / kubelet_volume_stats_capacity_bytes > 0.85
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "PVC {{ $labels.persistentvolumeclaim }} is 85% full"
+    description: "Volume {{ $labels.persistentvolumeclaim }} in {{ $labels.namespace }} is running low on space"
+```
+
+**`kubelet_volume_stats_used_bytes`** → Bytes used in a PVC, reported by the Kubelet (the node agent).
+**`kubelet_volume_stats_capacity_bytes`** → Total capacity of the PVC.
+
+**`/ ... > 0.85`** → Used fraction > 85% (PVC is more than 85% full).
+
+**Remember from Phase 7:** Prometheus stores metrics on a 10Gi EBS volume. Alertmanager stores alert state on a 2Gi EBS volume. These volumes fill up over time (metric data for Prometheus, old alert states for Alertmanager).
+
+When Prometheus' disk is 100% full:
+- It can't write new metric data
+- It starts discarding old data (corrupted state possible)
+- Alert rules stop evaluating → complete observability blackout
+
+**85% threshold gives you time to act** before it hits 100%. Actions: expand the PVC, reduce retention, delete old data.
+
+**`{{ $labels.persistentvolumeclaim }}`** → The PVC name, e.g., `prometheus-storage`, `alertmanager-storage`.
+
+---
+
+## 🔄 How The Complete Observability Flow Works
+
+```
+Every 15 seconds:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Prometheus → scrapes /metrics on every pod
+  → stores metrics as time-series in 10Gi EBS volume
+
+Constantly (every 1 minute):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Prometheus → evaluates ALL alert rules
+  → Rule result = true (threshold exceeded, for X minutes)?
+     YES: Create "Firing" alert → send to Alertmanager
+     NO:  If was firing, send "Resolved" → send to Alertmanager
+
+Alertmanager receives alert:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  → Read labels: severity=critical? → PagerDuty
+  → Read labels: severity=warning?  → Slack #alerts channel
+  → Read labels: team=platform?     → Slack #platform-alerts
+  → If same alert already firing: group/deduplicate (don't spam)
+  → If resolved: send "OK" notification
+
+Grafana (always running):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  → Reads from Prometheus via query (same PromQL)
+  → Visualizes dashboards: request rate, latency p95, error rate
+  → Anyone can browse dashboards in browser: http://grafana:3000
+```
+
+---
+
+## 🆕 NEW CONCEPT: Alert States — Pending, Firing, Resolved
+
+Prometheus alerts have 3 states:
+
+| State | Meaning | What's happening |
+|---|---|---|
+| **Inactive** | Expression is false | No problem detected |
+| **Pending** | Expression is true BUT `for:` duration not yet met | Problem detected, waiting to confirm |
+| **Firing** | Expression true AND `for:` duration satisfied | Alert sent to Alertmanager |
+| **Resolved** | Was Firing, now expression is false | Problem fixed, "resolved" notification sent |
+
+**Example:**
+```
+15:00:00 → HighErrorRate expr = true → state: PENDING (starts timing 5m)
+15:01:00 → still true → state: PENDING (elapsed: 1m)
+15:04:00 → drops below 5% → state: INACTIVE (timer resets)
+15:05:00 → rises again → state: PENDING (new timer starts)
+15:10:00 → still above 5% for 5 whole minutes → state: FIRING
+15:10:01 → Alertmanager receives alert → sends to Slack
+15:15:00 → error rate drops → state: RESOLVED
+15:15:01 → Alertmanager sends "RESOLVED" message to Slack
+```
+
+---
+
+## 🆕 NEW CONCEPT: How ArgoCD Deploys These Alert Rules
+
+Same pattern as Phase 8's Kyverno policies — you need an ArgoCD Application pointing to the prometheus folder:
+
+```yaml
+# gitops/platform/argocd/applications/prometheus-rules.yaml
+source:
+  path: gitops/platform/prometheus   # ← This folder with alert-rules.yaml
+  # ArgoCD applies alert-rules.yaml → PrometheusRule object created
+  # Prometheus Operator detects it → loads rules into Prometheus
+  # No Prometheus restart needed
+```
+
+Git commit → ArgoCD syncs → new alert rules active in seconds. **GitOps for observability.**
+
+---
+
+## 🔑 Key DevOps Takeaways from Phase 9
+
+| Concept | What You Applied | Why It Matters |
+|---|---|---|
+| **`PrometheusRule` CRD** | GitOps-managed alert rules | No manual Prometheus config editing, no restarts |
+| **`release: prometheus-stack` label** | The selector that activates the rules | Missing this label = silent failure (rules ignored) |
+| **`for:` pending duration** | Sustained-problem filter | Eliminates false alarms from brief spikes |
+| **`rate()` over counters** | Converts cumulative counts to per-second rates | Raw counters only increase; rate gives meaningful velocity |
+| **`sum() by (service)`** | Aggregate across all pods, group by service | Multi-pod services need aggregation |
+| **`histogram_quantile(0.95)`** | P95 latency calculation | Average hides tail latency; P95 reflects real user experience |
+| **`offset 10m`** | Compare current vs. past value | Detects changes over time (crash restart delta) |
+| **`and` operator** | Multi-condition alerts | Prevent false alarms by requiring context (no orders AND orders are being sent) |
+| **4 alert groups** | application / business / kubernetes / capacity | Organized scope — infrastructure vs. app vs. business |
+| **`severity:` labels** | Route alerts to right team/channel | critical → page on-call, warning → Slack |
+| **`team:` labels** | Route to right team | Multi-team clusters need alert routing |
+| **`runbook:` annotation** | Link to operational procedure | Engineers at 3am need step-by-step guidance |
+| **Business alerts** | `NoOrdersReceived`, `NotificationProcessingLag` | Tech can be "green" while business is broken — must check both |
+| **`HPAMaxedOut` lead indicator** | Alert before capacity is fully exhausted | Fix before errors appear, not after |
+
+---
+
+## ✅ Phase 9 Complete — What's Next
+
+After Phase 9, you can SEE everything:
+- ✅ 14 alert rules covering application, business, Kubernetes, and capacity health
+- ✅ Prometheus scraping all pods every 15 seconds
+- ✅ Alertmanager routing alerts to Slack/PagerDuty based on severity and team
+- ✅ Grafana dashboards showing real-time request rate, latency, error rate
+- ✅ You get paged BEFORE users notice problems (lead indicators like HPAMaxedOut, PVCNearlyFull)
+
+**Phase 10: Runbooks & Documentation** — Now that you have alerts, when one fires at 3am, what does the on-call engineer DO? The runbook is the step-by-step "when this alert fires, do *exactly* this." It's the operational brain of your team — codified into a document. 📋
+
+*Edited relevant file*
+
+### User Input
+
+Okay lets start from Phase 10.
+You need to explain each thing line by line for devops prespective, Block by block, I only know basic docker terraform and kubernets basic
+So any new topic u need to explain in detail as if beginner.If something is developer work no in depth required, NO seperate Artifact, , share it here in this window
+
+### Planner Response
+
+Let me read all the Phase 10 files first.
+
+*Viewed [runbook.md](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/docs/runbook.md) *
+
+*Viewed [slo-definitions.md](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/docs/slo-definitions.md) *
+
+### Planner Response
+
+I have all the files. Here is the complete Phase 10 explanation:
+
+---
+
+# 📋 Phase 10 — Runbooks & Documentation — Complete Deep-Dive
+
+---
+
+## 🧠 Big Picture First — What Problem Does Phase 10 Solve?
+
+You now have:
+- Alerts firing via Prometheus → Alertmanager → Slack/PagerDuty (Phase 9)
+- 14 alert rules covering every critical failure scenario
+
+But imagine this: **It's 3am. Your phone buzzes. Alertmanager says `HighErrorRate FIRING - order-service`.** You're half asleep. What do you do?
+
+**Without a runbook:** You wing it. You open the terminal, stare at it, try random `kubectl` commands, take 30 minutes to remember the right approach, make a mistake under pressure, prolong the outage.
+
+**With a runbook:** You open the link in the alert (`docs/runbook.md#high-error-rate`), follow the steps **exactly as written**, fix the issue in 5 minutes, go back to sleep.
+
+> **A runbook is a pre-written, step-by-step response procedure for each specific alert.** It's the on-call engineer's field manual. The goal is: **the person who gets paged at 3am should not need to think. They just follow the steps.**
+
+Phase 10 has **2 documents:**
+- [docs/runbook.md](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/docs/runbook.md:0:0-0:0) → Step-by-step incident procedures (tactical: "how to fix it NOW")
+- [docs/slo-definitions.md](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/docs/slo-definitions.md:0:0-0:0) → SLI/SLO definitions (strategic: "how do we define and measure success?")
+
+---
+
+## 🆕 NEW CONCEPT: SLI, SLO, SLA, and Error Budget
+
+Before reading the files, you absolutely need to understand these 4 terms. They are **the language of site reliability engineering (SRE)** — the discipline that does operations at scale.
+
+### SLI — Service Level Indicator
+**A specific, measurable metric about your service.**
+
+| SLI | What it measures | Example |
+|---|---|---|
+| Availability | % of requests that succeed | 99.8% of requests returned non-5xx |
+| Latency | How fast requests complete | P95 latency = 210ms |
+| Error Rate | % of requests that fail | 0.4% of requests returned 5xx |
+| Throughput | Requests per second | 450 req/s |
+
+An SLI is just a measurement. It needs a TARGET to be meaningful → that's the SLO.
+
+### SLO — Service Level Objective
+**The target value you promise to hit for an SLI — an internal commitment.**
+
+Examples:
+- **Availability SLO:** "99.9% of requests should succeed"
+- **Latency SLO:** "P95 latency should be below 500ms"
+- **Error Rate SLO:** "Error rate should be below 1%"
+
+SLOs are **internal goals** that your team commits to. They drive engineering priorities — if you're close to violating your SLO, you prioritize reliability work over new features.
+
+### SLA — Service Level Agreement
+**A contractual commitment to your customers.** If you miss it, there are penalties (refunds, credits).
+
+```
+SLI (measurement) → SLO (internal target) → SLA (contract with customers)
+```
+
+SLA is typically more relaxed than SLO. Example:
+- SLO: 99.95% availability (your internal target)
+- SLA: 99.9% availability (what you promise customers with penalties)
+
+The gap between SLO and SLA gives you a safety buffer.
+
+### Error Budget — The Most Important Concept
+**The amount of unreliability you're ALLOWED.**
+
+If your SLO is 99.9% availability:
+```
+Error Budget = 100% - 99.9% = 0.1% of time allowed to be down
+
+In a 30-day month:
+30 days × 24 hours × 60 min = 43,200 minutes
+0.1% × 43,200 = 43.2 minutes of allowed downtime per month
+```
+
+**Error budgets change how engineering teams think:**
+
+| Without Error Budget | With Error Budget |
+|---|---|
+| "Let's ship as fast as possible" | "We have 20 minutes of budget left this month" |
+| "That outage was fine, users survived" | "That outage cost us 15 minutes = 35% of monthly budget" |
+| Ops fights Dev: "stop breaking things" | Ops and Dev share the budget: both care equally |
+| Reliability work is always deprioritized | When budget is spent → feature work pauses, reliability work takes over |
+
+> **The error budget is the most powerful concept in modern SRE.** It creates alignment between development velocity and operational reliability.
+
+---
+
+## 📄 FILE 1: [docs/slo-definitions.md](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/docs/slo-definitions.md:0:0-0:0) — The Service Agreements
+
+### Header Block
+
+```markdown
+## What are SLIs and SLOs?
+
+- SLI (Service Level Indicator): A measurable metric about your service
+- SLO (Service Level Objective): A target value for an SLI ("99.9% of requests succeed")
+- Error Budget: The allowed amount of unreliability (e.g., 0.1% downtime = ~43 min/month)
+```
+
+This is the **definition section** — makes sure any engineer reading this document understands the terminology. Always document your terminology — different companies use these terms differently.
+
+**`0.1% downtime = ~43 min/month`** — This is worth understanding deeply. The math:
+```
+30 days = 43,200 minutes
+0.1% of 43,200 = 43.2 minutes ← your entire monthly downtime budget
+```
+99.9% sounds very reliable, but it only gives you 43 minutes of downtime per month. If a single deploy goes wrong and takes 45 minutes to roll back, you've **burned through your entire monthly budget** in one incident.
+
+---
+
+### Order Service SLOs
+
+```markdown
+## Order Service
+
+| SLI | Measurement | SLO Target | Error Budget |
+|---|---|---|---|
+| Availability | rate(http_requests_total{status!~"5.."}[30d]) / rate(http_requests_total[30d]) | 99.9% | 43 min/month |
+| Latency (P95) | histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) | < 500ms | N/A |
+| Error Rate | rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) | < 1% | N/A |
+```
+
+**Column by column:**
+
+**`SLI`** → What's being measured.
+
+**`Measurement`** → The exact PromQL query used to measure it. Notice: these are the SAME PromQL expressions as the alert rules in Phase 9, just with different time windows and thresholds. SLOs (long-term targets) use `[30d]` windows. Alerts (short-term triggers) use `[5m]` windows.
+
+**`Availability: rate(http_requests_total{status!~"5.."}[30d]) / rate(http_requests_total[30d])`**
+
+Breaking this down:
+- `{status!~"5.."}` → `!~` means "does NOT match regex" → all requests that are NOT 5xx (so 2xx, 3xx, 4xx)
+- `[30d]` → 30-day window — this is a **long-term** measurement, not 5 minutes
+- Result = (successful requests / total requests) over 30 days = availability percentage
+
+**SLO Target: 99.9%** → 99.9% of requests over the last 30 days must succeed. If it drops below → SLO breach → error budget consumed → engineering escalation.
+
+**Note:** The alert threshold for `HighErrorRate` is `> 5%` error rate for 5 minutes. But the SLO says `< 1%` error rate long-term. That's intentional:
+- Alert = "something urgent is happening RIGHT NOW" (5% for 5min = acute incident)
+- SLO = "are we reliably serving users over time" (1% over 30d = chronic health)
+
+**`Latency (P95): < 500ms`** — Order-service's P95 latency target is 500ms. Notice the alert fires at 2 seconds (Phase 9). Why the gap?
+- SLO (500ms) = what you aspire to as a baseline
+- Alert (2s) = when you're in an acute crisis that needs immediate action
+
+The gap gives you space to investigate degradation (500ms → 1s) before it reaches crisis level (2s).
+
+**`Error Budget: 43 min/month`** — Only Availability has an error budget listed because uptime/downtime is time-based (minutes). Latency and Error Rate targets are continuous — they don't translate to "minutes of budget" naturally.
+
+---
+
+### User Service SLOs
+
+```markdown
+## User Service
+
+| SLI | Measurement | SLO Target |
+|---|---|---|
+| Availability | Same formula as above | 99.9% |
+| Latency (P95) | Same | < 300ms |
+```
+
+**`Latency SLO: < 300ms`** (vs. order-service's 500ms) → User-service is a simpler service — it just reads/writes from a single PostgreSQL table. No SQS, no httpx calls. It should be faster. A tighter SLO (`< 300ms`) reflects this.
+
+This is how SLOs become **service-specific requirements** — they reflect the architecture and expected performance of each service individually.
+
+---
+
+### Notification Service SLOs
+
+```markdown
+## Notification Service
+
+| SLI | Measurement | SLO Target |
+|---|---|---|
+| Availability | Health check success rate | 99.9% |
+| Processing Lag | Time from SQS publish to notification processed | < 30 seconds |
+| DLQ Rate | Messages in DLQ / total messages | < 0.1% |
+```
+
+**Different SLIs than the other services.** Why? Because notification-service works differently — it's not primarily an HTTP service receiving user requests. It's a **SQS consumer** — it polls a queue and processes messages.
+
+**`Processing Lag: < 30 seconds`** — From when `order-service` publishes a message to SQS, to when `notification-service` processes it → this should be under 30 seconds. This is an **end-to-end business SLO** — customers expect near-real-time notifications when they place an order.
+
+**`DLQ Rate: < 0.1%`** — Remember from Phase 3 (docker-compose): messages that fail processing 3 times go to the Dead Letter Queue. If MORE than 0.1% of all messages end up in the DLQ → something is systematically broken in the notification processing logic.
+
+**Why is DLQ rate an SLO?** Because DLQ messages = notifications that were NEVER delivered to customers. Each message in the DLQ is a missed notification. 0.1% means you're allowed to miss 1 notification per 1000. More than that → breach.
+
+---
+
+### Alerting Thresholds Table
+
+```markdown
+## Alerting Thresholds
+
+| Alert | Threshold | Severity | Action |
+|---|---|---|---|
+| HighErrorRate | > 5% for 5 min | Critical | Page on-call → immediate investigation |
+| HighLatency | P95 > 2s for 5 min | Warning | Check logs → scale up if needed |
+| PodCrashLoop | > 3 restarts in 10 min | Critical | Check logs → rollback deployment |
+| DiskPressure | Node disk pressure | Critical | Expand EBS volume or add nodes |
+```
+
+**This table is the bridge between SLOs and operational alerts.** It shows:
+- SLO target: availability 99.9%, error rate < 1%
+- Alert fires at: > 5% error rate (gives time to react before SLO is severely breached)
+- Severity: Critical → on-call paged immediately
+- Action: what to do → links to the runbook
+
+This table is critical for **new engineers joining the team** — one table tells them "if this fires, it means X, and you should do Y."
+
+---
+
+## 📄 FILE 2: [docs/runbook.md](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/docs/runbook.md:0:0-0:0) — The Step-by-Step Incident Procedures
+
+```markdown
+# Incident Response Runbook — KubeFlow Ops
+```
+
+### 🆕 NEW CONCEPT: What Makes a Good Runbook?
+
+A good runbook has these properties:
+1. **Named after the alert** — easy to find when the alert fires
+2. **Severity clearly stated** — sets urgency
+3. **Numbered steps** — follow in order, no thinking required
+4. **Actual commands you can copy-paste** — no mental overhead
+5. **Common causes listed** — helps narrow down quickly
+6. **Escalation path** — who to call if you can't fix it
+
+---
+
+### RUNBOOK 1: `HighErrorRate (> 5% HTTP 5xx)`
+
+```markdown
+## Alert: HighErrorRate (> 5% HTTP 5xx)
+### Severity: Critical
+
+1. Check which service is affected
+   kubectl get pods -n kubeflow-ops
+   kubectl logs -n kubeflow-ops -l app=<service-name> --tail=100
+```
+
+**`kubectl get pods -n kubeflow-ops`** → First thing to run. Lists all pods and their status. You're looking for:
+- `CrashLoopBackOff` → pod is crashing
+- `OOMKilled` → pod ran out of memory
+- `Error` → pod failed to start
+- `Pending` → pod can't be scheduled (no node capacity)
+- `Running` but errors happening? → look at logs
+
+**`kubectl logs -n kubeflow-ops -l app=<service-name> --tail=100`** → Fetch the last 100 lines of logs from all pods of the service (the `-l app=<name>` is a **label selector** — same labels set in Phase 6's Helm chart):
+- `-n kubeflow-ops` → namespace
+- `-l app=<service-name>` → filter by label (e.g., `-l app=order-service`)
+- `--tail=100` → last 100 log lines (don't dump gigabytes)
+
+---
+
+```markdown
+2. Check recent deployments (was something just deployed?)
+   kubectl rollout history deployment/<service-name> -n kubeflow-ops
+```
+
+**`kubectl rollout history`** → Shows the history of a Deployment — every time a new image was rolled out with a timestamp. This tells you: "did someone deploy in the last 10 minutes?" 
+
+**Why this is Step 2:** The most common cause of sudden error spikes is a bad deployment. A new image with a bug was just pushed. Checking rollout history immediately tells you if that's the case.
+
+**`deployment/<service-name>`** → Replace with `deployment/order-service`, etc.
+
+---
+
+```markdown
+3. Rollback if recent deployment caused it
+   kubectl rollout undo deployment/<service-name> -n kubeflow-ops
+```
+
+**`kubectl rollout undo`** → **This is the emergency stop button.** It immediately rolls the Deployment back to the previous image version — the one that was working before. No need to change any YAML files or git commits.
+
+**How it works:**
+```
+Before deployment:   image: abc1233 (working)
+After deployment:    image: abc1234 (broken - errors!)
+kubectl rollout undo → image: abc1233 (working again)
+```
+
+Kubernetes starts replacing the new pods with old pods via a rolling update — the same rollout mechanism, but in reverse. **Zero downtime rollback.** In 30-60 seconds, you're back to the working version.
+
+**Important NOTE:** This is an **emergency tactical fix**, not a permanent solution. After the rollback:
+1. The error rate drops ✅
+2. Alert resolves ✅  
+3. Then you investigate WHY the new image was broken (separate task)
+4. Fix the code, push a new commit → ArgoCD deploys the fixed version
+
+**ArgoCD and `kubectl rollout undo`:** Here's a nuance — ArgoCD's `selfHeal: true` (Phase 7) will detect the rollback and try to re-apply the Git state (which still has the broken image tag). So after a rollback, you should also update `values.yaml` to point to the last known-good image tag and push to Git — that way both ArgoCD and the cluster agree on the working version.
+
+---
+
+```markdown
+4. Check downstream dependencies
+   - RDS: aws rds describe-db-instances --db-instance-identifier kubeflow-ops-dev-postgres
+   - Redis: Is ElastiCache healthy?
+   - SQS: Are messages piling up? aws sqs get-queue-attributes --queue-url <url> --attribute-names All
+```
+
+**Why check dependencies?** If the code hasn't changed but errors just started → the problem is likely NOT the code. It's an infrastructure dependency:
+
+**`aws rds describe-db-instances`** → Check the RDS PostgreSQL status. Common issues:
+- `status: stopped` → RDS was stopped (cost saving gone wrong)
+- `status: incompatible-parameters` → parameter group change in progress
+- `DBInstanceStatus: storage-full` → RDS ran out of disk → all writes fail
+- High CPU/connection count → RDS is overwhelmed
+
+**`aws sqs get-queue-attributes --attribute-names All`** → Checks SQS queue health. The important attributes to look at:
+- `ApproximateNumberOfMessages` → messages waiting to be processed. If this is in the thousands → notification-service is falling behind
+- `ApproximateNumberOfMessagesNotVisible` → messages currently being processed
+- `ApproximateNumberOfMessagesDelayed` → messages in delay queue
+
+---
+
+```markdown
+5. Check Grafana dashboards
+   - Open SRE Overview dashboard
+   - Look at error rate graph — when did it start?
+   - Check pod logs: kubectl logs -n kubeflow-ops -l app=<service-name> --tail=200
+```
+
+**`Open SRE Overview dashboard`** → The Grafana dashboard shows historical trends. You can see:
+- "Error rate was 0% for 3 weeks, then spiked at 14:32" → correlates with a deployment at 14:30
+- "Error rate has been gradually increasing for 48 hours" → a slow memory leak, not a deployment bug
+
+**`when did it start?`** → The time the error started is critical context. It tells you what changed around that time. Check:
+- Did a deployment happen? (`kubectl rollout history`)
+- Did traffic spike? (Grafana request rate graph)
+- Did an AWS maintenance window happen? (AWS console)
+
+---
+
+### RUNBOOK 2: `PodCrashLoopBackOff`
+
+```markdown
+## Alert: PodCrashLoopBackOff
+### Severity: Critical
+
+1. Identify the crashing pod
+   kubectl get pods -n kubeflow-ops | grep CrashLoop
+```
+
+**`| grep CrashLoop`** → The `|` is a Linux pipe — takes the output of `kubectl get pods` and filters it through `grep` (text search). Only shows lines containing "CrashLoop". Without `grep`, you'd see all pods. With it, you immediately see only the problematic ones.
+
+**CrashLoopBackOff** means: the pod starts, crashes immediately, Kubernetes waits, tries again, crashes again, waits longer (exponential backoff), tries again... in a loop. The `BackOff` means Kubernetes is waiting between retries (starting at 10s, doubling each time up to 5 minutes).
+
+---
+
+```markdown
+2. Check pod logs (including previous crash)
+   kubectl logs <pod-name> -n kubeflow-ops --previous
+```
+
+**`--previous`** → This is the critical flag for CrashLoop debugging. 
+
+When a pod crashes and restarts, Kubernetes creates a NEW container process. The old container's logs are normally gone. `--previous` fetches the logs from the **last crashed container** — the one that died. Those logs contain the **actual error message** that caused the crash.
+
+Without `--previous`: you see logs from the current restart (which might be brief — just starting up)
+With `--previous`: you see the error that caused the last crash
+
+**What you're looking for in the logs:**
+```
+# Memory too small → OOMKilled
+FATAL: Killed (OOMKilled), memory limit: 256Mi
+
+# Can't connect to database → config error
+sqlalchemy.exc.OperationalError: could not connect to server: Connection refused
+Is the server running on host "postgres" (10.0.1.45) and accepting TCP/IP connections on port 5432?
+
+# Missing environment variable → config error  
+KeyError: 'DATABASE_URL'
+```
+
+---
+
+```markdown
+3. Check events for the pod
+   kubectl describe pod <pod-name> -n kubeflow-ops
+```
+
+**`kubectl describe pod`** → This is the most detailed pod information command. Shows everything:
+- What image is running
+- Resource limits/requests
+- All environment variables
+- All volumes mounted
+- **Events** (the most important section) — a timeline of what happened:
+
+```
+Events:
+  Type     Reason     Message
+  ----     ------     -------
+  Warning  OOMKilling Container order-service was OOMKilled
+  Warning  BackOff    Back-off restarting failed container
+  Normal   Pulled     Successfully pulled image "ecr.../order-service:abc1234"
+```
+
+**Events tell the story of what happened** — even if the pod logs don't have the error (e.g., OOMKill doesn't show in app logs, it shows in events).
+
+---
+
+```markdown
+4. Common causes:
+   - OOMKilled → Increase memory limits
+   - Config error → Check ConfigMap/Secrets
+   - DB connection error → Check RDS security group / credentials
+   - Image pull error → Check ECR repository and image tag
+```
+
+**`OOMKilled`** (Out of Memory Killed) → The pod exceeded its `resources.limits.memory` (256Mi from Phase 6). Linux kernel killed the process to protect the node.
+- Fix: Increase `memory.limits` in `values.yaml` → push to Git → ArgoCD syncs → new pod with higher limit
+
+**`Config error`** → Missing or wrong environment variable. Order-service needs `DATABASE_URL`. If the K8s Secret `db-credentials` doesn't exist yet (ESO hasn't synced it) → pod starts → tries to read the secret → fails → crash.
+- Fix: Check `kubectl get secret db-credentials -n kubeflow-ops` — does it exist?
+
+**`DB connection error`** → Pod is running but can't connect to RDS. Common causes:
+- Wrong security group (VPC firewall not allowing EKS → RDS) → AWS console fix  
+- Wrong credentials (ESO synced wrong values) → check AWS Secrets Manager
+- RDS is down → check RDS status in AWS console
+
+**`Image pull error`** → Pod can't pull the Docker image from ECR. Common causes:
+- Wrong image tag in `values.yaml` (CI pushed wrong tag)
+- ECR repository permissions issue (IRSA misconfigured)
+- Image was deleted from ECR
+
+---
+
+### RUNBOOK 3: `HighLatency (P95 > 2s)`
+
+```markdown
+## Alert: HighLatency (P95 > 2s)
+### Severity: Warning
+
+1. Check current pod count and HPA status
+   kubectl get hpa -n kubeflow-ops
+   kubectl top pods -n kubeflow-ops
+```
+
+**`kubectl get hpa -n kubeflow-ops`** → Shows HPA status for all services:
+```
+NAME               MINPODS   MAXPODS   REPLICAS   CPU    MEMORY
+order-service      2         10        8          78%    45%
+user-service       2         10        2          22%    18%
+```
+- `REPLICAS: 8` with CPU `78%` → HPA is scaling up, load is high
+- Is it at MAXPODS? → You might need to manually scale or increase maxReplicas
+
+**`kubectl top pods -n kubeflow-ops`** → Shows **real-time** CPU and memory consumption of each pod (uses the Kubernetes Metrics Server):
+```
+NAME                           CPU(cores)   MEMORY(bytes)
+order-service-abc-123          450m         220Mi
+order-service-abc-456          480m         215Mi
+```
+If pods are near their limits → that's why latency is high. The app is CPU-throttled.
+
+---
+
+```markdown
+2. Scale up if needed
+   kubectl scale deployment/<service-name> -n kubeflow-ops --replicas=5
+```
+
+**`kubectl scale deployment`** → Manually force a higher replica count when HPA isn't scaling fast enough or you need immediate relief.
+
+**When to use this vs. letting HPA handle it:**
+- HPA auto-scales based on CPU/memory thresholds (Phase 6 HPA config)
+- HPA has a `scaleUp.stabilizationWindow` (60 seconds) — it won't scale instantly
+- During an active high-latency incident, you don't want to wait 60+ seconds
+- `kubectl scale` gives **immediate** relief while HPA catches up
+
+**Important:** This is temporary. After the incident, HPA will take over management. ArgoCD's `selfHeal` won't immediately revert this (HPA is managing the replica count, not ArgoCD's Deployment template directly).
+
+---
+
+```markdown
+3. Check database performance
+   - Are there slow queries? Check RDS Performance Insights
+   - Is there connection pool exhaustion?
+```
+
+**`RDS Performance Insights`** → AWS Console → RDS → Performance Insights. Shows a graph of:
+- Average active sessions (AAS) — how many queries are running concurrently
+- Top SQL queries by wait time
+- Database locks
+
+If p95 latency is high but CPU seems fine → the bottleneck is likely the **database**, not the application. The app is fast, but it's waiting for slow DB queries.
+
+**Connection pool exhaustion** → Each FastAPI app maintains a pool of DB connections (SQLAlchemy). If too many concurrent requests hit the same pod, the pool fills up → new requests wait for a connection → latency spikes. Fix: increase connection pool size in app config OR scale pods (more pods = more connection pools = more total DB connections).
+
+---
+
+```markdown
+4. Check pod logs for slow operations
+   kubectl logs -n kubeflow-ops -l app=<service-name> --tail=200
+```
+
+**`--tail=200`** → Last 200 log lines. For latency issues, you're looking for:
+- Slow DB query logs: `WARNING: Query took 2.3s: SELECT * FROM orders WHERE...`
+- Timeout errors: `httpx.TimeoutException: Timeout connecting to user-service`
+- Lock contention: `DeadlockDetected` or `LockTimeout`
+
+---
+
+### RUNBOOK 4: `NodeDiskPressure`
+
+```markdown
+## Alert: NodeDiskPressure
+### Severity: Critical
+
+1. Identify the node
+   kubectl get nodes -o wide
+   kubectl describe node <node-name> | grep -A5 Conditions
+```
+
+**`kubectl get nodes -o wide`** → Lists all EKS worker nodes with their IP addresses:
+```
+NAME                     STATUS   ROLES    AGE   VERSION   INTERNAL-IP
+ip-10-0-1-45.ec2...      Ready    <none>   5d    v1.28     10.0.1.45
+ip-10-0-2-67.ec2...      Ready    <none>   5d    v1.28     10.0.2.67
+```
+
+**`kubectl describe node <node-name> | grep -A5 Conditions`** → Shows the Node Conditions block:
+```
+Conditions:
+  Type                 Status   Message
+  ----                 ------   -------
+  DiskPressure         True     kubelet has disk pressure  ← This is what fired the alert
+  MemoryPressure       False    ...
+  PIDPressure          False    ...
+  Ready                True     ...
+```
+
+**`-A5`** flag in grep → "show 5 lines **After** each match." Shows the condition block neatly.
+
+---
+
+```markdown
+2. Clean up disk space
+   docker system prune -af   # On the node: prune unused Docker images
+```
+
+**This is run ON THE NODE** (the EC2 instance), not just from your laptop via `kubectl`.
+
+**`docker system prune -af`** → Deletes ALL unused Docker resources:
+- Stopped containers
+- Images not referenced by any container
+- Unused networks
+- Build cache
+
+**`-a`** → Include all unused images (not just dangling ones)
+**`-f`** → Force — don't ask for confirmation
+
+**Why does this help?** EKS nodes accumulate old Docker images over time. Every deploy brings a new image, previous images stay on disk. Over time, `/var/lib/docker` fills up. `prune` clears the old images to free space.
+
+**How to SSH to the node:** (you need this to run docker commands directly)
+```bash
+# Get the EC2 instance's private IP from kubectl get nodes -o wide
+# SSH via Session Manager (no direct SSH needed with SSM)
+aws ssm start-session --target <instance-id>
+```
+
+---
+
+```markdown
+3. If persistent: Increase EBS volume size or let Karpenter provision new nodes
+```
+
+**If `docker system prune` isn't enough:** The node's EBS root volume needs to be expanded.
+
+**`Karpenter`** → An automatic node provisioner for Kubernetes (newer alternative to Cluster Autoscaler). If configured, Karpenter automatically adds new EC2 nodes when pods can't be scheduled (not in this project by default, but mentioned as an option).
+
+---
+
+### RUNBOOK 5: General Debugging Commands
+
+```bash
+## General Debugging Commands
+
+# Cluster health
+kubectl cluster-info             # API server URL, DNS service
+kubectl get nodes -o wide        # Node list with IPs, status
+kubectl top nodes                # CPU/memory usage per node
+
+# Application status
+kubectl get all -n kubeflow-ops  # Everything in the namespace
+kubectl get events -n kubeflow-ops --sort-by='.lastTimestamp'  # Events chronologically
+
+# ArgoCD status
+kubectl get applications -n argocd  # All ArgoCD applications and sync state
+argocd app list                     # Same but in ArgoCD CLI format
+
+# Check all problem pods (not Running and not Completed)
+kubectl get pods -A | grep -v Running | grep -v Completed
+```
+
+**`kubectl cluster-info`** → Quick sanity check. If this fails, the API server is unreachable — nothing else will work. Verify you have the right kubeconfig.
+
+**`kubectl get all -n kubeflow-ops`** → Shows ALL resource types (pods, services, deployments, HPAs, etc.) in the namespace. Good overview.
+
+**`kubectl get events -n kubeflow-ops --sort-by='.lastTimestamp'`** → Events are like Kubernetes' audit log — every significant action is recorded:
+- "pod is OOMKilled"
+- "image pulled successfully"
+- "failed to schedule pod"
+- "deployment rolled out successfully"
+
+**`--sort-by='.lastTimestamp'`** → Sort events newest-last (the most recent events at the bottom, easiest to read). Without sort, events are in random order.
+
+**`kubectl get pods -A | grep -v Running | grep -v Completed`** → 🔑 The most useful "what's wrong right now" command.
+- `-A` → All namespaces (not just kubeflow-ops)
+- `grep -v Running` → exclude Running pods (they're fine)
+- `grep -v Completed` → exclude Completed pods (Jobs that finished successfully — also fine)
+- Result: Only shows pods in `Pending`, `CrashLoopBackOff`, `Error`, `OOMKilled`, `Evicted` states
+
+In a healthy cluster, this command returns nothing. When something is broken, it immediately shows you what and where.
+
+**`kubectl get applications -n argocd`** → Shows all ArgoCD Applications and whether they're `Synced` / `Healthy` or `OutOfSync` / `Degraded`. Quick way to check if ArgoCD is aware of any issues.
+
+---
+
+## 🔄 The Complete Incident Response Flow
+
+```
+ALERT FIRES: "HighErrorRate - order-service [CRITICAL]"
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Slack/PagerDuty notification received
+Link in alert: docs/runbook.md#highErrorRate
+                    │
+                    ▼
+Engineer opens runbook (< 30 seconds)
+Follows steps 1-5 exactly
+                    │
+        ┌───────────┴──────────────┐
+        │                          │
+   Recent deploy?            No recent deploy?
+        │                          │
+        ▼                          ▼
+`kubectl rollout undo`     Check dependencies (RDS/SQS)
+  (2-minute fix)           Check Grafana for when it started
+        │                  Check pod logs for error pattern
+        │                          │
+        └───────────┬──────────────┘
+                    │
+                    ▼
+           Alert resolves → "RESOLVED" notification
+           Write post-mortem if SLO breached
+           Fix root cause properly (separate task)
+```
+
+---
+
+## 🆕 NEW CONCEPT: The Post-Mortem (Blameless Culture)
+
+After a critical incident (especially SLO breach):
+
+> **A post-mortem is a written analysis of what happened, why, and what we'll do to prevent it.** The key word: **blameless**. It doesn't matter WHO made the mistake — it matters WHAT systemic process allowed the mistake to happen.
+
+A good post-mortem contains:
+1. **Timeline** — exact sequence of events (with timestamps)
+2. **Root cause** — the actual technical reason
+3. **Contributing factors** — what made it worse/harder to detect
+4. **Impact** — how many users, how long, SLO impact, error budget consumed
+5. **Action items** — what changes to make to prevent recurrence
+
+In this project: after a `PodCrashLoopBackOff` caused by a missing Secret:
+- NOT: "John forgot to create the secret"
+- IS: "Our deployment process doesn't verify prerequisites (ESO sync) before deploying. We'll add a smoke test in Phase 11 that checks for required secrets before calling a deploy successful."
+
+---
+
+## 🔑 Key DevOps Takeaways from Phase 10
+
+| Concept | What It Is | Why It Matters |
+|---|---|---|
+| **SLI** | Measurable metric (availability, latency, error rate) | Quantifies service health objectively |
+| **SLO** | Target value for an SLI (99.9%, <500ms) | Sets the standard before incidents happen |
+| **SLA** | Customer-facing contract (typically less strict than SLO) | Legal commitment — missing it costs money |
+| **Error Budget** | Allowed downtime (e.g., 43 min/month for 99.9%) | Balances velocity vs. reliability at the team level |
+| **Runbook** | Step-by-step fix procedure per alert | 3am fix in 5 min vs. 30 min war room |
+| **`--previous` flag** | Gets crashed pod's logs | Only way to see why a CrashLoop pod died |
+| **`kubectl rollout undo`** | Emergency rollback to previous image | Fastest possible recovery from bad deploy |
+| **`kubectl describe pod`** | Full pod details including Events section | Reveals OOMKill, ImagePullError, scheduling failure |
+| **`| grep -v Running`** | Filter to only problem pods | One command shows cluster health at a glance |
+| **`--sort-by=.lastTimestamp`** | Events in time order | Find what Kubernetes just noticed |
+| **DLQ Rate SLO** | % of messages that end up in dead letter queue | Catches broken async processing (not visible in HTTP metrics) |
+| **Blameless post-mortem** | Analyze what failed, not who failed | Creates learning culture, improves systems over time |
+
+---
+
+## ✅ Phase 10 Complete — What's Next
+
+After Phase 10, your operations are codified:
+- ✅ SLOs defined for every service with specific PromQL measurements
+- ✅ Error budgets calculated — teams know how much downtime is acceptable
+- ✅ Runbooks cover every critical alert — step-by-step recovery in hand
+- ✅ General debugging commands documented — any engineer can investigate
+- ✅ Common failure causes documented — OOMKill, bad deploy, DB issue, image pull failure
+
+**Phase 11: Operational Scripts** — The final phase automates the tedious manual steps. Instead of running 10 commands to set up OIDC, or manually creating secrets in AWS SM, Phase 11 gives you shell scripts for: bootstrapping ArgoCD, creating AWS secrets, setting up GitHub-AWS OIDC trust, and running smoke tests after every deployment. 🔧
