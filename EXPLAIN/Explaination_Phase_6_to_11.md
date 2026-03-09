@@ -4983,3 +4983,962 @@ After Phase 10, your operations are codified:
 - ✅ Common failure causes documented — OOMKill, bad deploy, DB issue, image pull failure
 
 **Phase 11: Operational Scripts** — The final phase automates the tedious manual steps. Instead of running 10 commands to set up OIDC, or manually creating secrets in AWS SM, Phase 11 gives you shell scripts for: bootstrapping ArgoCD, creating AWS secrets, setting up GitHub-AWS OIDC trust, and running smoke tests after every deployment. 🔧
+
+*Edited relevant file*
+
+### User Input
+
+Okay lets start from Phase 11.
+You need to explain each thing line by line for devops prespective, Block by block, I only know basic docker terraform and kubernets basic
+So any new topic u need to explain in detail as if beginner.If something is developer work no in depth required, NO seperate Artifact, , share it here in this window
+
+### Planner Response
+
+Let me read all the Phase 11 scripts first.
+
+*Listed directory [scripts](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts) *
+
+*Listed directory [automation](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/automation) *
+
+*Listed directory [ops](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/ops) *
+
+*Viewed [check_cluster_health.sh](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/ops/check_cluster_health.sh) *
+
+*Viewed [rollback_deployment.sh](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/ops/rollback_deployment.sh) *
+
+*Viewed [health_check.py](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/automation/health_check.py) *
+
+*Viewed [cleanup_old_images.py](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/automation/cleanup_old_images.py) *
+
+*Viewed [incident_notifier.py](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/automation/incident_notifier.py) *
+
+*Viewed [log_analyzer.py](file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/automation/log_analyzer.py) *
+
+### Planner Response
+
+I have all the files. Here is the complete Phase 11 explanation:
+
+---
+
+# 🔧 Phase 11 — Operational Scripts — Complete Deep-Dive
+
+---
+
+## 🧠 Big Picture First — What Problem Does Phase 11 Solve?
+
+By Phase 10 you have runbooks with commands like:
+```bash
+kubectl rollout undo deployment/order-service -n kubeflow-ops
+kubectl get pods -n kubeflow-ops | grep CrashLoop
+```
+
+These are manual commands. **Phase 11 wraps the most common operational tasks into scripts** — so that:
+- A junior engineer who has never seen the cluster can run a single script and get a clear diagnosis
+- Repetitive tasks (image cleanup, health checks) can be automated and scheduled  
+- Rollbacks have safety steps built-in (confirmation, dry-run, ArgoCD awareness)
+- Log analysis across all pods is done in seconds instead of minutes of grepping
+
+**The scripts are organized into two categories:**
+
+```
+scripts/
+├── ops/                    ← Emergency/operational use (bash)
+│   ├── check_cluster_health.sh    → Run during incidents: "is anything broken?"
+│   └── rollback_deployment.sh     → Safe rollback with confirmation + ArgoCD awareness
+│
+└── automation/             ← Automated tasks (Python)
+    ├── health_check.py     → HTTP health check all services (can run from CI/CD)
+    ├── cleanup_old_images.py  → Delete old ECR images to save cost
+    ├── incident_notifier.py   → Send alerts to Slack / AWS SNS programmatically
+    └── log_analyzer.py     → Analyze pod logs for error patterns with recommendations
+```
+
+---
+
+## 🆕 NEW CONCEPT: Bash Scripting Fundamentals for DevOps
+
+The ops scripts are **bash shell scripts** — the language of the Linux terminal. You already use bash every time you type a command. Scripts just chain multiple commands together.
+
+**Key syntax you'll see:**
+
+```bash
+#!/bin/bash          # Shebang line — tells the OS: "use bash to run this file"
+set -euo pipefail    # Safety flags (explained in detail below)
+
+VAR="value"          # Variable assignment (NO spaces around =)
+echo "$VAR"          # Use variables with $ prefix
+if [ "$VAR" = "value" ]; then   # Conditional
+    echo "match"
+fi
+```
+
+---
+
+## 📄 FILE 1: [scripts/ops/check_cluster_health.sh](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/ops/check_cluster_health.sh:0:0-0:0)
+
+**Purpose:** Run ONE script → get a complete health snapshot of the cluster. Used at the start of incidents, before deployments, and as a morning check.
+
+---
+
+### Block 1 — Header & Shebang
+
+```bash
+#!/bin/bash
+# =============================================================================
+# Cluster Health Check Script
+# ...
+# Usage:
+#   ./scripts/ops/check_cluster_health.sh
+#   ./scripts/ops/check_cluster_health.sh --namespace kubeflow-ops
+#   ./scripts/ops/check_cluster_health.sh --verbose
+# =============================================================================
+```
+
+**`#!/bin/bash`** → **The shebang line**. `#!` pronounced "shebang." When you run [./check_cluster_health.sh](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/ops/check_cluster_health.sh:0:0-0:0), the OS reads the first line to know what interpreter to use. `/bin/bash` = "use bash." Without this, the OS might use `/bin/sh` (older, fewer features) or fail.
+
+---
+
+### Block 2 — Safety Flags
+
+```bash
+set -euo pipefail
+```
+
+This single line is **THE most important line in any bash script**. Breaking down each flag:
+
+**`-e` (errexit)** → Exit immediately if ANY command returns a non-zero exit code (failure). Without this, a script continues running after a failure, potentially making things worse:
+```bash
+# Without -e:
+kubectl get nonexistent-resource   # fails silently
+deploy_something                   # runs anyway on bad state — dangerous!
+
+# With -e:
+kubectl get nonexistent-resource   # fails → script STOPS HERE
+deploy_something                   # never runs
+```
+
+**`-u` (nounset)** → Exit if the script tries to use an undefined variable. Without this, a typo in a variable name gives you empty string silently:
+```bash
+# Without -u:
+echo "$NAMESPACE"   # if NAMESPACE not set → prints nothing, continues
+kubectl delete ns "$NAMESPACE"   # deletes nothing silently — could be a bug
+
+# With -u:
+echo "$NAMEPSACE"   # typo → "unbound variable: NAMEPSACE" → script stops
+```
+
+**`-o pipefail`** → The exit code of a pipeline (`cmd1 | cmd2`) is determined by the LAST FAILED command, not just the last command. Without this:
+```bash
+# Without -o pipefail:
+kubectl get invalid-resource | grep "something"
+# kubectl fails (non-zero) but grep runs anyway, pipeline returns grep's exit code (0)
+# Script thinks everything was fine!
+
+# With -o pipefail:
+# If kubectl fails → entire pipeline fails → -e catches it → script stops
+```
+
+> **DevOps rule:** ALWAYS start bash scripts with `set -euo pipefail`. This single line prevents an entire class of silent failure bugs that are extremely hard to debug.
+
+---
+
+### Block 3 — Variables & Colors
+
+```bash
+NAMESPACE="${1:---all-namespaces}"
+VERBOSE="${2:-}"
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'     # NC = No Color (reset)
+```
+
+**`NAMESPACE="${1:---all-namespaces}"`** → Parameter expansion with default value.
+- `$1` → The first command-line argument (e.g., `./script.sh kubeflow-ops` → `$1 = kubeflow-ops`)
+- `${1:-default}` → If `$1` is empty or unset, use `default`
+- So: `${1:---all-namespaces}` → if no argument is given, use `--all-namespaces`
+
+**ANSI color codes** → Terminal color escape sequences:
+- `\033[0;31m` → Start red text
+- `\033[0m` (NC) → Reset to default (ALWAYS needed after a color, otherwise everything stays colored)
+- `echo -e "..."` → The `-e` flag enables escape sequence interpretation (required for colors)
+
+These make the output scannable — red = problem, green = OK, yellow = warning.
+
+---
+
+### Block 4 — Helper Functions
+
+```bash
+print_header() {
+    echo ""
+    echo -e "${BLUE}═══════════════════════════════════════${NC}"
+    echo -e "${BLUE}  $1${NC}"
+    echo -e "${BLUE}═══════════════════════════════════════${NC}"
+}
+
+print_ok()   { echo -e "${GREEN}  ✅ $1${NC}"; }
+print_warn() { echo -e "${YELLOW}  ⚠️  $1${NC}"; }
+print_fail() { echo -e "${RED}  ❌ $1${NC}"; }
+```
+
+**[print_header() { ... }](cci:1://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/ops/check_cluster_health.sh:23:0-28:1)** → Defines a reusable bash **function**. Called with `print_header "Section Title"`. `$1` inside a function = the first argument passed to the function.
+
+**[print_ok](cci:1://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/ops/check_cluster_health.sh:30:0-30:49), [print_warn](cci:1://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/ops/check_cluster_health.sh:31:0-31:54), [print_fail](cci:1://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/ops/check_cluster_health.sh:32:0-32:47)** → Single-line functions for consistent, colored output throughout the script. This is the DevOps version of code reuse — instead of copy-pasting the color codes everywhere, one function call gives you consistent styling.
+
+---
+
+### Block 5 — `EXIT_CODE` Variable
+
+```bash
+EXIT_CODE=0
+```
+
+**A running score for the script.** Starts at `0` (healthy). If any check fails, it gets set to `1`. At the end, `exit $EXIT_CODE` sets the process exit code — this is what CI/CD systems, monitoring tools, and calling scripts read to know if the health check passed or failed.
+
+**`exit 0`** = success (everything healthy)
+**`exit 1`** = failure (something is wrong)
+
+In CI/CD pipelines: `check_cluster_health.sh && deploy.sh` — if health check exits 1, the deploy never runs.
+
+---
+
+### Block 6 — Check 1: Cluster Connectivity
+
+```bash
+print_header "1. Cluster Connectivity"
+if kubectl cluster-info &>/dev/null; then
+    CLUSTER_NAME=$(kubectl config current-context)
+    print_ok "Connected to cluster: ${CLUSTER_NAME}"
+else
+    print_fail "Cannot connect to cluster!"
+    exit 1
+fi
+```
+
+**`&>/dev/null`** → Redirects BOTH stdout and stderr to `/dev/null` (the black hole — discards everything). We're running `kubectl cluster-info` only to test connectivity — we don't want its output, just its exit code. If the command succeeds → exit code 0 → `if` is true.
+
+**`if command; then` pattern** → In bash, `if` works on exit codes: exit 0 = true, non-zero = false.
+
+**`$(kubectl config current-context)`** → Command substitution. Runs `kubectl config current-context` and stores the output (the cluster name from kubeconfig) in the variable. Result example: `arn:aws:eks:us-east-1:123456789:cluster/kubeflow-ops-dev`
+
+**`exit 1`** → If we can't connect to the cluster, there's no point running any other checks. Hard stop immediately.
+
+---
+
+### Block 7 — Check 2: Node Health
+
+```bash
+TOTAL_NODES=$(kubectl get nodes --no-headers | wc -l)
+READY_NODES=$(kubectl get nodes --no-headers | grep -c " Ready" || true)
+NOT_READY=$(kubectl get nodes --no-headers | grep -v " Ready" || true)
+
+if [ "$TOTAL_NODES" -eq "$READY_NODES" ]; then
+    print_ok "All ${TOTAL_NODES} nodes are Ready"
+else
+    print_fail "${READY_NODES}/${TOTAL_NODES} nodes Ready"
+    EXIT_CODE=1
+fi
+```
+
+**`--no-headers`** → `kubectl get` normally prints a header row (NAME, STATUS, etc.). `--no-headers` suppresses it so we're counting only actual node rows.
+
+**`wc -l`** → Word Count with `-l` flag = count lines. `kubectl get nodes --no-headers | wc -l` = number of nodes.
+
+**`grep -c " Ready"`** → `-c` flag = count matching lines (instead of printing them). `grep -c " Ready"` counts lines containing " Ready".
+
+**`|| true`** → If `grep` finds NO matches, it exits with code 1 (no match). Because of `set -e`, that would kill the entire script. `|| true` says: "if grep fails, don't fail the script — just continue." The variable will be empty or 0.
+
+**`-eq` in `[ "$TOTAL_NODES" -eq "$READY_NODES" ]`** → Numeric comparison in bash. `-eq` = "equal". String comparison uses `=`. Arithmetic uses `-eq`, `-ne`, `-gt`, `-lt`, `-ge`, `-le`.
+
+**`EXIT_CODE=1`** → Don't exit immediately — continue checking other things. Just flag the failure for the summary at the end.
+
+---
+
+### Block 8 — Check 3: Pod Health (most important section)
+
+```bash
+FAILED_PODS=$(kubectl get pods -n kubeflow-ops --no-headers 2>/dev/null \
+    | grep -E "Error|CrashLoopBackOff|ImagePullBackOff|OOMKilled" || true)
+
+if [ -n "$FAILED_PODS" ]; then
+    print_fail "Unhealthy pods found:"
+    echo "$FAILED_PODS" | while read -r line; do
+        echo -e "${RED}    $line${NC}"
+    done
+    EXIT_CODE=1
+fi
+```
+
+**`2>/dev/null`** → Redirect stderr (`2`) to `/dev/null`. If the namespace doesn't exist yet, [kubectl](cci:1://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/automation/log_analyzer.py:54:0-77:17) prints an error to stderr. This silences that error. `2>/dev/null` vs `&>/dev/null`: `2>` = only stderr. `&>` = both stdout AND stderr.
+
+**`grep -E "Error|CrashLoopBackOff|ImagePullBackOff|OOMKilled"`** → Extended regex (`-E`) matching any of these pod states separated by `|` (OR in regex).
+
+**`[ -n "$FAILED_PODS" ]`** → `-n` = "string is NOT empty." If variable has any content → true → we have failed pods.
+
+**`while read -r line`** → Loop through each line of output. `read -r` reads one line per iteration into variable `$line`. The `-r` flag prevents backslash interpretation.
+
+---
+
+### Block 9 — Check 4: Service Endpoints
+
+```bash
+for SVC in order-service user-service notification-service; do
+    ENDPOINTS=$(kubectl get endpoints "${SVC}" -n kubeflow-ops \
+        -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || echo "")
+    if [ -n "$ENDPOINTS" ]; then
+        COUNT=$(echo "$ENDPOINTS" | wc -w)
+        print_ok "${SVC}: ${COUNT} endpoint(s) — ${ENDPOINTS}"
+    else
+        print_fail "${SVC}: NO endpoints (service has no healthy pods!)"
+        EXIT_CODE=1
+    fi
+done
+```
+
+**`for SVC in ...`** → Bash for-loop. Iterates over space-separated values. Each iteration: `$SVC = order-service`, then `$SVC = user-service`, etc.
+
+**`-o jsonpath='{.subsets[*].addresses[*].ip}'`** → **JSONPath output format.** Kubernetes resources are JSON internally. JSONPath queries let you extract specific fields:
+- `.subsets` → the endpoints object
+- `[*]` → all entries (wildcard)
+- `.addresses[*].ip` → all IP addresses of healthy endpoints
+
+**What this reveals:** A Kubernetes `Service` object is like a pointer to healthy pods. `kubectl get endpoints` shows the actual pod IPs that the Service is routing traffic to. If `ENDPOINTS` is empty → the Service has no healthy pods behind it → traffic to this service goes nowhere → customers get errors. This check catches situations where all pods are stuck in `Pending` or `CrashLoopBackOff`.
+
+---
+
+### Block 10 — Check 8: ArgoCD Status
+
+```bash
+if kubectl get applications -n argocd &>/dev/null; then
+    kubectl get applications -n argocd -o custom-columns=\
+'NAME:.metadata.name,STATUS:.status.sync.status,HEALTH:.status.health.status' 2>/dev/null
+else
+    print_warn "ArgoCD not installed or not accessible"
+fi
+```
+
+**`-o custom-columns=`** → Custom output columns for kubectl. Format: `COLUMN_HEADER:.jsonpath.path`.
+- `NAME:.metadata.name` → Column "NAME" showing the resource's name
+- `STATUS:.status.sync.status` → Column "STATUS" showing sync state (`Synced` or `OutOfSync`)
+- `HEALTH:.status.health.status` → Column "HEALTH" showing health state (`Healthy`, `Degraded`, `Progressing`)
+
+Output looks like:
+```
+NAME                STATUS    HEALTH
+order-service       Synced    Healthy
+user-service        OutOfSync Degraded   ← This needs attention!
+notification-svc    Synced    Healthy
+```
+
+---
+
+## 📄 FILE 2: [scripts/ops/rollback_deployment.sh](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/ops/rollback_deployment.sh:0:0-0:0)
+
+**Purpose:** A safe, guided rollback script that does more than `kubectl rollout undo` — it shows you what you're rolling back, asks for confirmation, optionally does a dry-run, waits for completion, and importantly handles ArgoCD's `selfHeal`.
+
+---
+
+### Block 1 — Argument Parsing Pattern
+
+```bash
+SERVICE_NAME="${1:-}"
+REVISION=""
+DRY_RUN=false
+
+if [ -z "$SERVICE_NAME" ]; then
+    echo "Usage: $0 <service-name> [--revision N] [--dry-run]"
+    kubectl get deployments -n "$NAMESPACE" ...
+    exit 1
+fi
+
+shift
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --revision)
+            REVISION="$2"
+            shift 2
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+done
+```
+
+**`shift`** → Removes the first positional argument (`$1`) from the argument list. After `SERVICE_NAME="${1:-}"`, we've consumed `$1`. `shift` moves everything left: `$2 → $1`, `$3 → $2`, etc. Now the loop can process remaining args (`--revision`, `--dry-run`).
+
+**`while [[ $# -gt 0 ]]`** → `$#` = number of remaining arguments. Loop while there are arguments left.
+
+**`case $1 in`** → Bash's switch statement. Pattern matches `$1`:
+- `--revision)` → if `$1 = "--revision"`, execute this block
+- `shift 2` → consume both `--revision` AND its value (`$2 = "3"`)
+- `*)` → default case (catch-all for unknown options)
+
+**`[ -z "$SERVICE_NAME" ]`** → `-z` = "string IS empty." Opposite of `-n`.
+
+**The `--dry-run` flag** → Best practice in any destructive operation. Shows WHAT would happen without actually doing it. Crucial for training and verification.
+
+---
+
+### Block 2 — Pre-flight: Show What We're About to Rollback
+
+```bash
+CURRENT_IMAGE=$(kubectl get deployment "$SERVICE_NAME" -n "$NAMESPACE" \
+    -o jsonpath='{.spec.template.spec.containers[0].image}')
+echo "Current image: ${CURRENT_IMAGE}"
+```
+
+**`jsonpath='{.spec.template.spec.containers[0].image}'`** → Extracts the Docker image from the Deployment's pod template:
+- `.spec.template.spec` → the pod specification inside the deployment
+- `.containers[0]` → first container (index 0)
+- `.image` → the full image reference (e.g., `123456.ecr.../order-service:abc1234`)
+
+**Why show the current image?** The engineer doing the rollback needs to see "I'm rolling back FROM abc1234". They can confirm: "yes, that's the broken image that was just deployed" before confirming.
+
+---
+
+### Block 3 — Dry Run Mode
+
+```bash
+if [ "$DRY_RUN" = true ]; then
+    echo "DRY RUN — would execute:"
+    if [ -n "$REVISION" ]; then
+        echo "  kubectl rollout undo deployment/${SERVICE_NAME} -n ${NAMESPACE} --to-revision=${REVISION}"
+    else
+        echo "  kubectl rollout undo deployment/${SERVICE_NAME} -n ${NAMESPACE}"
+    fi
+    exit 0
+fi
+```
+
+**When `--dry-run` is passed:** Print the exact command that WOULD be run and exit. Nothing is changed in the cluster. Useful when:
+- Training a new engineer ("here's what the rollback would do")
+- Validating in a pre-production environment before doing it in prod
+- On-call runbook says "verify before executing"
+
+**`--to-revision=N`** → Instead of "go back one revision," go back to a SPECIFIC revision number. Useful when you need to skip multiple bad deployments and go back to revision 5 specifically. `kubectl rollout history` shows revision numbers.
+
+---
+
+### Block 4 — Human Confirmation
+
+```bash
+read -p "Continue? (y/N) " -n 1 -r
+echo ""
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Cancelled."
+    exit 0
+fi
+```
+
+**`read -p "prompt" -n 1 -r`** → Prompts the user and reads exactly 1 character (`-n 1`). `-r` = raw mode (no backslash interpretation). The character is stored in `$REPLY`.
+
+**`[[ ! $REPLY =~ ^[Yy]$ ]]`** → Double brackets `[[...]]` (bash's modern conditional). `=~` = regex match. `^[Yy]$` = exactly "y" or "Y" and nothing else. `!` = NOT. So: "if reply is NOT y or Y, cancel."
+
+**Why the confirmation step?** Rollbacks affect production traffic. A single fat-finger mistake shouldn't apply a rollback. This is the human equivalent of `terraform plan` before `terraform apply`.
+
+---
+
+### Block 5 — Execute and Wait
+
+```bash
+kubectl rollout undo deployment/"$SERVICE_NAME" -n "$NAMESPACE" --to-revision="$REVISION"
+
+echo "Waiting for rollout to complete..."
+if kubectl rollout status deployment/"$SERVICE_NAME" -n "$NAMESPACE" --timeout=300s; then
+    NEW_IMAGE=$(kubectl get deployment "$SERVICE_NAME" -n "$NAMESPACE" \
+        -o jsonpath='{.spec.template.spec.containers[0].image}')
+    echo "✅ Rollback complete!"
+    echo "   Previous image: ${CURRENT_IMAGE}"
+    echo "   Current image:  ${NEW_IMAGE}"
+else
+    echo "❌ Rollback failed — rollout did not complete in 5 minutes"
+    exit 1
+fi
+```
+
+**`kubectl rollout status ... --timeout=300s`** → 🔑 This command **WAITS** until the rollout completes (or times out). Without it, the script would run `rollout undo` and immediately exit — leaving the engineer not knowing if the rollback actually succeeded.
+
+**What it watches:** Kubernetes is performing a rolling update (replacing bad pods with old-image pods). `rollout status` monitors this and prints progress:
+```
+Waiting for deployment "order-service" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "order-service" rollout to finish: 2 out of 3 new replicas have been updated...
+deployment "order-service" successfully rolled out
+```
+When all 3 replicas are running the old image → exits 0 → "Rollback complete!"
+
+**`--timeout=300s`** → If after 5 minutes the rollout hasn't completed (pods stuck in crash loop, pulling image, etc.) → `rollout status` exits with code 1 → our `if` catches it → prints the failure message with instructions.
+
+---
+
+### Block 6 — ArgoCD Self-Heal Prevention (The Critical Step)
+
+```bash
+echo "Note: If ArgoCD manages this deployment, it may revert the rollback."
+echo "To prevent this, update the image tag in gitops/ and push to Git."
+
+if command -v argocd &>/dev/null; then
+    echo "ArgoCD detected. Pausing auto-sync to prevent revert..."
+    argocd app set "$SERVICE_NAME" --sync-policy none 2>/dev/null || true
+    echo "⚠️  Auto-sync PAUSED for ${SERVICE_NAME}. Re-enable after investigation:"
+    echo "   argocd app set ${SERVICE_NAME} --sync-policy automated"
+fi
+```
+
+**This is the most DevOps-sophisticated part of the script.** Remember Phase 7: ArgoCD has `selfHeal: true`. This means it continuously compares the cluster state to Git. If we just did `kubectl rollout undo`, the cluster now has image `abc1233` but Git still says `abc1234`. ArgoCD will detect this drift and REVERT our rollback within minutes.
+
+**`command -v argocd`** → Checks if the `argocd` CLI is installed. `command -v` returns the path to the command or exits non-zero if not found. `&>/dev/null` discards output — we only care about success/failure.
+
+**`argocd app set "$SERVICE_NAME" --sync-policy none`** → **Pauses ArgoCD's automated sync** for this specific application. Stops ArgoCD from reverting the rollback. The `2>/dev/null || true` handles the case where ArgoCD CLI isn't configured — fails silently.
+
+**The engineer MUST then:**
+1. Investigate WHY the deployment was broken
+2. Fix the code / rollback the `values.yaml` image tag in Git
+3. Push to Git → ArgoCD detects the GitOps-valid state
+4. Re-enable auto-sync: `argocd app set order-service --sync-policy automated`
+
+This is the full "rollback without breaking GitOps" pattern. The script teaches you the whole flow, not just the [kubectl](cci:1://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/automation/log_analyzer.py:54:0-77:17) command.
+
+---
+
+## 📄 FILE 3: [scripts/automation/health_check.py](cci:7://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/automation/health_check.py:0:0-0:0)
+
+**Purpose:** HTTP health check all services from OUTSIDE the cluster (from your laptop or from CI/CD after a deployment). Checks `/healthz` and `/readyz` endpoints, measures response times, runs all checks **concurrently** (parallel), and exits with a non-zero code if anything is unhealthy.
+
+---
+
+### Block 1 — Environment Configuration
+
+```python
+ENVIRONMENTS = {
+    "local": {
+        "order-service": "http://localhost:8001",
+        "user-service":  "http://localhost:8002",
+        "notification-service": "http://localhost:8003",
+    },
+    "dev": {
+        "order-service": "https://dev-api.kubeflow-ops.example.com",
+        ...
+    },
+    "prod": {
+        "order-service": "https://api.kubeflow-ops.example.com",
+        ...
+    },
+}
+
+HEALTH_ENDPOINTS = ["/healthz", "/readyz"]
+```
+
+**Multi-environment support.** `local` hits your Docker Compose ports. `dev/prod` hit the real Load Balancer URLs (Ingress from Phase 6). Run with: `python health_check.py --env dev`.
+
+**`/healthz` and `/readyz`** → Both endpoints (from Phase 2 Dockerfiles and Phase 6 probes) are checked. `/healthz` = liveness (is the app running?). `/readyz` = readiness (is the app able to serve traffic?). Checking both gives different information:
+- `/healthz` fails → process crashed or deadlocked
+- `/readyz` fails → app alive but dependencies (DB, etc.) unreachable
+
+---
+
+### Block 2 — Concurrent Execution
+
+```python
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+with ThreadPoolExecutor(max_workers=10) as executor:
+    futures = {}
+    for service, base_url in services.items():
+        for endpoint in HEALTH_ENDPOINTS:
+            future = executor.submit(check_endpoint, base_url, service, endpoint, timeout)
+            futures[future] = (service, endpoint)
+    
+    for future in as_completed(futures):
+        results.append(future.result())
+```
+
+**`ThreadPoolExecutor`** → A thread pool — runs multiple functions simultaneously in parallel threads. With 3 services × 2 endpoints = 6 HTTP requests, running them sequentially would take 6 × timeout = 30 seconds worst case. In parallel → all 6 run at once → completes in ~1 timeout = 5 seconds.
+
+**`executor.submit(function, *args)`** → Schedules [check_endpoint](cci:1://file:///c:/PROJECTS/Kubeflow_Devsecops_Pipeline/scripts/automation/health_check.py:66:0-115:9) to run in a thread. Returns a `Future` object (a promise of a result).
+
+**`as_completed(futures)`** → Iterates over futures as they complete (not in submission order). First result to come back is processed first.
+
+**Why this matters for DevOps:** The health check is run after every deployment in CI/CD. Fast feedback = developers know within 5 seconds if the deployment broke health checks.
+
+---
+
+### Block 3 — Exit Code for CI/CD Integration
+
+```python
+sys.exit(0 if all_healthy else 1)
+```
+
+**`sys.exit(0)`** → Exit code 0 = success. In GitHub Actions: the step passes, the pipeline continues.
+**`sys.exit(1)`** → Exit code 1 = failure. In GitHub Actions: the step FAILS, the pipeline stops, ArgoCD deploy is blocked.
+
+This single line makes the health check script **CI/CD-compatible**. In `.github/workflows/`:
+```yaml
+- name: Health Check
+  run: python scripts/automation/health_check.py --env dev
+  # If this exits 1 → workflow fails → Slack notification → deployment blocked
+```
+
+---
+
+## 📄 FILE 4: `scripts/automation/cleanup_old_images.py`
+
+**Purpose:** Delete old Docker images from ECR to save money. By default, keep the 10 most recent images; delete everything older.
+
+---
+
+### Block 1 — The ECR Storage Problem
+
+```python
+PROJECT_NAME = "kubeflow-ops"
+SERVICES = ["order-service", "user-service", "notification-service"]
+```
+
+Every time CI/CD runs (Phase 4), it builds and pushes a new Docker image to ECR tagged with the git commit SHA (`abc1234`). Over time:
+```
+ECR repository: kubeflow-ops-order-service
+  abc1111 (pushed 6 months ago) — 120MB
+  abc1112 (pushed 6 months ago) — 120MB
+  ...
+  abc1599 (pushed last week) — 120MB
+  abc1600 (today) — 120MB
+  
+Total: 600+ images × 120MB = 72GB of storage
+ECR costs: $0.10/GB/month → $7.20/month JUST for old images nobody runs
+```
+
+**`cleanup_old_images.py --keep 10`** → Keep only the 10 newest images. Delete 590 old ones. 590 × 120MB = ~70GB freed = ~$7/month saved per ECR repository.
+
+---
+
+### Block 2 — Dry-Run Safety Pattern
+
+```python
+parser.add_argument("--dry-run", action="store_true",
+                    help="Show what would be deleted without actually deleting")
+```
+
+```python
+if to_delete and not dry_run:
+    ecr_client.batch_delete_image(...)
+elif dry_run and to_delete:
+    print("DRY RUN — would delete:")
+    for img in to_delete[:5]:
+        print(f"  {tags} ({size} MB, pushed {pushed_at})")
+```
+
+**ALWAYS add `--dry-run` to any destructive script.** Running `cleanup_old_images.py --dry-run` shows exactly what would be deleted — you can review and confirm before actually deleting. First run: always `--dry-run`. Second run: actual deletion if the output looked reasonable.
+
+---
+
+### Block 3 — Untagged Image Cleanup
+
+```python
+# Always delete untagged images regardless of 'keep' count
+untagged = [img for img in to_keep if not img["tags"]]
+if untagged:
+    to_delete.extend(untagged)
+    to_keep = [img for img in to_keep if img["tags"]]
+```
+
+**Untagged images** → When you push a new image with the SAME tag (e.g., `latest`), the old image loses its tag and becomes "untagged" (just identified by its digest/SHA). Untagged images are useless (nothing references them by tag) and should always be deleted — even if they're "recent." This logic always cleans those up regardless of the `--keep` count.
+
+---
+
+## 📄 FILE 5: `scripts/automation/incident_notifier.py`
+
+**Purpose:** Send structured incident notifications to multiple channels (Slack, AWS SNS for PagerDuty, console) from any script or CI/CD step.
+
+---
+
+### Block 1 — Multi-Channel Architecture
+
+```python
+SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL", "")
+SNS_TOPIC_ARN    = os.getenv("SNS_TOPIC_ARN", "")
+
+CHANNELS = {
+    "console": send_to_console,
+    "slack":   send_to_slack,
+    "sns":     send_to_sns,
+}
+```
+
+**`os.getenv("SLACK_WEBHOOK_URL", "")`** → Read from environment variable. The webhook URL is a secret — it shouldn't be hardcoded in the script. It's set as a GitHub Actions secret or Kubernetes Secret:
+```yaml
+# In GitHub Actions:
+env:
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+```
+
+**`CHANNELS` dictionary** → The script uses the same interface for all channels. `"console"` → `send_to_console function`. Calling `CHANNELS["slack"](message)` dispatches to the right function. This is a **dispatch table** pattern — clean way to add new channels without rewriting the main logic.
+
+---
+
+### Block 2 — Slack Webhook Payload
+
+```python
+payload = {
+    "attachments": [{
+        "color": message["color"],    # Red for critical, orange for warning
+        "title": f"{emoji} {title}",
+        "fields": [
+            {"title": "Service",     "value": service,     "short": True},
+            {"title": "Severity",    "value": severity,    "short": True},
+            {"title": "Environment", "value": environment, "short": True},
+            {"title": "Time",        "value": timestamp,   "short": True},
+            {"title": "Description", "value": description, "short": False},
+        ],
+        "footer": "KubeFlow Ops Incident Notifier",
+    }]
+}
+resp = requests.post(SLACK_WEBHOOK_URL, json=payload, timeout=10)
+```
+
+**Slack Incoming Webhook** → A URL that accepts HTTP POST requests with JSON payload. Slack turns the JSON into a formatted message. The `attachments` format creates a colored sidebar on the Slack message — red sidebar = critical incident.
+
+**`"short": True`** → Display this field in a 2-column layout (small fields side by side). `"short": False` = full-width field (for longer description text).
+
+**`timeout=10`** → Always set timeouts on HTTP calls. Without a timeout, if Slack is slow → your script hangs forever.
+
+---
+
+### Block 3 — AWS SNS Integration
+
+```python
+sns_client.publish(
+    TopicArn=SNS_TOPIC_ARN,
+    Subject=subject,
+    Message=body,
+    MessageAttributes={
+        "severity": {"DataType": "String", "StringValue": message["severity"]},
+        "service":  {"DataType": "String", "StringValue": message["service"]},
+    },
+)
+```
+
+### 🆕 NEW CONCEPT: AWS SNS for Incident Routing
+
+**AWS SNS (Simple Notification Service)** → A pub/sub messaging service. You publish a message to a **Topic**, and all **Subscribers** receive it.
+
+**Subscribers can be:**
+- Email addresses → on-call engineer gets an email
+- PagerDuty → creates an incident ticket, pages the on-call phone
+- Lambda function → automated remediation
+- SMS → text message to on-call phone
+
+**`MessageAttributes`** → Key-value metadata on the SNS message. Subscribers can use **filter policies** based on these attributes:
+```json
+// PagerDuty subscriber filter policy:
+{"severity": ["critical"]}  
+// Only receives messages where severity = "critical"
+// Warning messages go to Slack only, not PagerDuty
+```
+
+This creates a **smart routing** system: critical → PagerDuty (wakes people up) + Slack. Warning → Slack only.
+
+---
+
+## 📄 FILE 6: `scripts/automation/log_analyzer.py`
+
+**Purpose:** Fetch pod logs from the cluster and automatically detect patterns of errors, categorize them, show when errors spike over time, and give specific recommendations about what to fix.
+
+---
+
+### Block 1 — Pre-defined Error Pattern Library
+
+```python
+ERROR_PATTERNS = {
+    "database_error": re.compile(r"(OperationalError|psycopg2|sqlalchemy\.exc|connection.*refused.*5432)", re.IGNORECASE),
+    "http_5xx":       re.compile(r"(HTTP\s*5\d{2}|Internal Server Error|502 Bad Gateway)", re.IGNORECASE),
+    "timeout":        re.compile(r"(timeout|timed?\s*out|deadline\s*exceeded)", re.IGNORECASE),
+    "oom":            re.compile(r"(OOMKilled|out\s*of\s*memory|memory\s*limit)", re.IGNORECASE),
+    "auth_error":     re.compile(r"(unauthorized|forbidden|403|401|authentication.*fail)", re.IGNORECASE),
+    "sqs_error":      re.compile(r"(SQS.*error|queue.*error)", re.IGNORECASE),
+    "redis_error":    re.compile(r"(redis.*error|connection.*refused.*6379)", re.IGNORECASE),
+    "crash":          re.compile(r"(Traceback|Exception|CRITICAL|FATAL)", re.IGNORECASE),
+    "image_pull":     re.compile(r"(ImagePullBackOff|ErrImagePull|image.*not.*found)", re.IGNORECASE),
+}
+```
+
+**`re.compile(pattern, re.IGNORECASE)`** → Pre-compiles a regex pattern. `re.IGNORECASE` = case-insensitive (matches `DATABASE_ERROR`, `database_error`, `Database Error`).
+
+**Why categorized patterns?** Raw log output for a microservice with a DB issue might have hundreds of lines like:
+```
+sqlalchemy.exc.OperationalError: could not connect to server
+sqlalchemy.exc.OperationalError: could not connect to server
+sqlalchemy.exc.OperationalError: could not connect to server
+```
+The analyzer categorizes all of these as `database_error: 150` — immediately telling you the nature of the problem without reading 150 individual lines.
+
+---
+
+### Block 2 — Fetching Logs via kubectl subprocess
+
+```python
+cmd = [
+    "kubectl", "logs",
+    "-n", NAMESPACE,
+    "-l", f"app={service}",
+    "--all-containers=true",
+    f"--since={since}",
+    f"--tail={tail}",
+]
+result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+```
+
+**`subprocess.run()`** → Python's way to run a shell command and capture its output. Equivalent to running `kubectl logs ...` in your terminal.
+
+**`capture_output=True`** → Captures stdout and stderr. Available as `result.stdout` and `result.stderr`.
+
+**`text=True`** → Return output as string (not bytes). Without this, you get `b"output"` (bytes) instead of `"output"` (string).
+
+**`timeout=30`** → 30-second timeout. If the cluster is slow to respond → don't hang forever.
+
+**`--all-containers=true`** → If a pod has multiple containers (e.g., init containers + main container), fetch logs from ALL of them. A crash might be in the init container, not the main container.
+
+**`--since=1h`** → Only fetch logs from the last 1 hour. Without this, you'd fetch potentially gigabytes of historical logs.
+
+---
+
+### Block 3 — Automated Recommendations
+
+```python
+def generate_recommendations(analysis: dict) -> list[str]:
+    counts = analysis["error_counts"]
+    
+    if counts.get("database_error", 0) > 0:
+        recommendations.append(
+            "🔧 DATABASE: Check RDS connectivity, security groups, and credentials. "
+            "aws rds describe-db-instances"
+        )
+    
+    if counts.get("oom", 0) > 0:
+        recommendations.append(
+            "🔧 MEMORY: Pods are being OOM-killed. Increase memory limits. "
+            "kubectl top pods -n kubeflow-ops"
+        )
+    
+    if analysis["error_rate_percent"] > 5:
+        recommendations.append(
+            "🚨 ERROR RATE > 5%: Consider rolling back: "
+            "./scripts/ops/rollback_deployment.sh <service-name>"
+        )
+```
+
+**The script links its own analysis back to the runbook actions.** If it detects `database_error` → it tells you EXACTLY what to check (RDS security groups, credentials) and the AWS CLI command to run. If error rate > 5% → it suggests running the rollback script.
+
+**Why this is powerful during incidents:** Instead of manually `grep`-ing through thousands of log lines at 3am, one command:
+```bash
+python scripts/automation/log_analyzer.py --service order-service --since 30m
+```
+Gives you:
+```
+📊 Summary
+   Total lines analyzed: 8,432
+   Total errors found:   287
+   Error rate:           3.4%
+
+🔍 Error Distribution
+   database_error       245  ████████████████████████████████████████
+   timeout               35  ████████
+   http_5xx               7  █
+
+💡 Recommendations
+   🔧 DATABASE: Check RDS connectivity...
+   🔧 TIMEOUT: Requests are timing out...
+```
+
+In 10 seconds you know: 245 DB errors, 35 timeouts → the DB is clearly the problem → check RDS.
+
+---
+
+## 🔄 How All Phase 11 Scripts Work Together
+
+```
+INCIDENT RESPONSE WORKFLOW (combining all scripts):
+
+1. Alert fires: Slack/PagerDuty notification
+   
+2. Run cluster health check (instant diagnosis):
+   ./scripts/ops/check_cluster_health.sh
+   → Shows: "order-service: NO endpoints!"
+   → Shows: "3/3 pods in CrashLoopBackOff"
+   
+3. Run log analyzer (understand WHY):
+   python scripts/automation/log_analyzer.py --service order-service --since 1h
+   → Shows: "database_error: 150 times"
+   → RECOMMENDATION: Check RDS...
+   
+4. Check dependencies (RDS is down for maintenance)
+   
+5. Rollback to last stable deploy:
+   ./scripts/ops/rollback_deployment.sh order-service --dry-run  ← verify first
+   ./scripts/ops/rollback_deployment.sh order-service           ← execute
+   
+6. Health check after rollback:
+   python scripts/automation/health_check.py --env dev
+   → ✅ All 6 checks passed
+   
+7. Send resolved notification:
+   python scripts/automation/incident_notifier.py \
+     --severity info --service order-service \
+     --title "Incident Resolved" --description "Rolled back to abc1233" \
+     --channel slack
+   
+8. Schedule ECR cleanup (weekly cron):
+   python scripts/automation/cleanup_old_images.py --keep 10
+```
+
+---
+
+## 🔑 Key DevOps Takeaways from Phase 11
+
+| Script | What It Does | When to Use |
+|---|---|---|
+| `check_cluster_health.sh` | 8-section complete cluster diagnosis | Start of every incident, before every deployment |
+| `rollback_deployment.sh` | Safe rollback with dry-run + ArgoCD pause | When a bad deployment causes production errors |
+| `health_check.py` | HTTP health check all services with response time | After every deployment in CI/CD, periodic monitoring |
+| `cleanup_old_images.py` | Delete old ECR images, keeps N recent | Weekly cron job, before month-end billing |
+| `incident_notifier.py` | Send alerts to Slack/SNS programmatically | From other scripts, cron jobs, automated remediation |
+| `log_analyzer.py` | Grep → categorize → recommend → exits with error code | During incidents, when you need to understand "what's wrong" |
+
+| Concept | What You Applied | Why It Matters |
+|---|---|---|
+| **`set -euo pipefail`** | Safety flags on ALL bash scripts | Bash silently ignores errors by default — this fixes that |
+| **`--dry-run` flag** | On all destructive scripts | View what WOULD happen before actually doing it |
+| **Exit codes** | Python scripts exit 0/1/2 | CI/CD pipelines read exit codes — enables automated gating |
+| **Concurrent health checks** | `ThreadPoolExecutor` | 6 HTTP checks in ~1s instead of ~30s — CI feedback speed |
+| **Error pattern library** | `ERROR_PATTERNS` dict in log_analyzer | Categorizes logs automatically — no manual grepping at 3am |
+| **JSON output mode** | `--json` flag on Python scripts | Machine-readable output for automated pipelines |
+| **ArgoCD sync pause** | `argocd app set --sync-policy none` | Prevents ArgoCD from reverting an emergency rollback |
+| **Subprocess kubectl** | `subprocess.run(["kubectl", ...])` | Python scripts can wrap kubectl commands for rich output |
+
+---
+
+## ✅ Phase 11 Complete — The Pipeline is Done
+
+You have now covered **all 11 phases** of the KubeFlow DevSecOps Pipeline:
+
+| Phase | What Was Built |
+|---|---|
+| **Phase 1** | Understood the application (FastAPI microservices, dependencies) |
+| **Phase 2** | Wrote Dockerfiles (multi-stage builds, non-root users, health checks) |
+| **Phase 3** | Docker Compose (local environment with LocalStack/SQS) |
+| **Phase 4** | GitHub Actions CI/CD (build, test, Trivy scan, push to ECR) |
+| **Phase 5** | Terraform (EKS, RDS, ElastiCache, SQS, ECR, VPC, IRSA) |
+| **Phase 6** | Helm Charts (Kubernetes manifests, HPA, probes, IRSA annotations) |
+| **Phase 7** | ArgoCD App-of-Apps (GitOps — Git is the source of truth) |
+| **Phase 8** | Kyverno + ESO (policy enforcement + secrets from AWS SM) |
+| **Phase 9** | Prometheus Alert Rules (14 alerts: app, business, k8s, capacity) |
+| **Phase 10** | Runbooks + SLOs (incident response + availability targets) |
+| **Phase 11** | Operational Scripts (automated diagnosis, safe rollback, log analysis) |
+
+🎉 **This is a complete, production-grade DevSecOps pipeline.**
