@@ -6,7 +6,9 @@
 #   - Require resource limits on all containers
 #   - Require app + team labels on Deployments
 #   - Block privileged containers
-# NOTE: kyverno.yaml (the operator) must be synced BEFORE this application.
+#
+# SYNC WAVE 2: ArgoCD will NOT start this until wave 1 (kyverno.yaml) is
+# fully healthy. The CRD 'ClusterPolicy' must exist before we apply policies.
 # =============================================================================
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -16,6 +18,8 @@ metadata:
   labels:
     app.kubernetes.io/part-of: kubeflow-ops
     type: security
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"   # Wait for Kyverno engine (wave 1) first
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:

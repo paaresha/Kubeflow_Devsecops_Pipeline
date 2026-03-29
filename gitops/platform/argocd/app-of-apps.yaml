@@ -15,7 +15,8 @@
 #   ├── Child App: user-service
 #   ├── Child App: notification-service
 #   ├── Child App: prometheus-stack
-#   ├── Child App: kyverno
+#   ├── Child App: kyverno              (installs the Kyverno engine via Helm)
+#   ├── Child App: kyverno-policies     (deploys ClusterPolicies into gitops/platform/kyverno)
 #   └── Child App: external-secrets
 #
 # When we add a new Application YAML to gitops/platform/argocd/applications/,

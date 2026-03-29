@@ -4,6 +4,9 @@
 # Kyverno enforces security policies on your cluster. If someone tries to
 # deploy a pod that violates a policy, Kyverno blocks it.
 #
+# SYNC WAVE 1: This app is deployed BEFORE kyverno-policies (wave 2).
+# ArgoCD waits for this app to be healthy before moving to the next wave.
+#
 # Example: A developer tries to deploy without resource limits →
 #          Kyverno rejects the deployment with a clear error message.
 # =============================================================================
@@ -15,6 +18,8 @@ metadata:
   labels:
     app.kubernetes.io/part-of: kubeflow-ops
     type: security
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"   # Deploy engine first
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
