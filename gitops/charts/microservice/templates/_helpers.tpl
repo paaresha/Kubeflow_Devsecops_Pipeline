@@ -36,6 +36,7 @@ Pod template labels (selectors + extra metadata)
 */}}
 {{- define "microservice.podLabels" -}}
 app: {{ .Values.name }}
+service: {{ .Values.name }}
 team: {{ .Values.team }}
 version: {{ .Values.version }}
 {{- end -}}
